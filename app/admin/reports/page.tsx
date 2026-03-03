@@ -6,7 +6,7 @@ export default function AdminReportsPage() {
     return (
         <Box className="grid gap-4">
             <Box>
-                <Typography className="text-xl font-extrabold text-slate-900">รายงาน</Typography>
+                <Typography variant="h6" className="text-xl font-extrabold text-slate-900">รายงาน</Typography>
                 <Typography className="text-sm text-slate-600">สรุปและส่งออกข้อมูลเพื่อวิเคราะห์</Typography>
             </Box>
 
