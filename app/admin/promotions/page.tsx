@@ -22,7 +22,7 @@ export default function AdminPromotionsPage() {
         <Box className="grid gap-4">
             <Stack direction={{ xs: "column", md: "row" }} spacing={2} className="items-start md:items-center justify-between">
                 <Box>
-                    <Typography className="text-xl font-extrabold text-slate-900">โปรโมชัน</Typography>
+                    <Typography variant="h6" className="text-xl font-extrabold text-slate-900">โปรโมชัน</Typography>
                     <Typography className="text-sm text-slate-600">จัดการคูปอง/โค้ดส่วนลดและโปรโมชัน</Typography>
                 </Box>
 
