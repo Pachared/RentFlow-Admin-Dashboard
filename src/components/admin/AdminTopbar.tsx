@@ -302,50 +302,6 @@ export default function AdminTopbar({
 
             <ChevronRightRoundedIcon sx={{ color: "rgb(148 163 184)" }} />
           </ListItemButton>
-
-          {/* กิจกรรมล่าสุด */}
-          <ListItemButton
-            sx={{
-              borderRadius: 3,
-              border: "1px solid transparent",
-              minHeight: 48,
-              px: 1.5,
-              py: 1.5,
-              mt: 1,
-              "&:hover": {
-                bgcolor: "rgb(248 250 252)",
-                borderColor: "rgb(148 163 184)",
-              },
-            }}
-          >
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 2.5,
-                display: "grid",
-                placeItems: "center",
-                bgcolor: "rgb(241 245 249)",
-                border: "1px solid rgb(226 232 240)",
-                mr: 1.5,
-              }}
-            >
-              <HistoryRoundedIcon
-                sx={{ fontSize: 22, color: "rgb(30 41 59)" }}
-              />
-            </Box>
-
-            <Box sx={{ flex: 1 }}>
-              <Box sx={{ fontWeight: 600, color: "rgb(15 23 42)" }}>
-                กิจกรรมล่าสุด
-              </Box>
-              <Box sx={{ fontSize: 12, color: "rgb(100 116 139)" }}>
-                ดูประวัติการใช้งานของบัญชีนี้
-              </Box>
-            </Box>
-
-            <ChevronRightRoundedIcon sx={{ color: "rgb(148 163 184)" }} />
-          </ListItemButton>
         </List>
 
         <Box sx={{ flex: 1 }} />
