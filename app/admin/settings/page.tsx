@@ -186,7 +186,7 @@ export default function AdminProfileSettingsPage() {
             >
               <Stack direction="row" spacing={1.25} className="items-center">
                 <Box className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-slate-50">
-                  <PersonRoundedIcon fontSize="small" />
+                  <PersonRoundedIcon fontSize="medium" />
                 </Box>
                 <Box>
                   <Typography className="text-sm font-bold text-slate-900">
@@ -277,7 +277,7 @@ export default function AdminProfileSettingsPage() {
                     />
                     <Button
                       variant="outlined"
-                      size="small"
+                      size="medium"
                       startIcon={<PhotoCameraRoundedIcon />}
                       onClick={onPickAvatar}
                       sx={{
@@ -361,7 +361,7 @@ export default function AdminProfileSettingsPage() {
                   <Stack direction="row" spacing={1.5} className="items-center">
                     <Button
                       variant="contained"
-                      size="small"
+                      size="medium"
                       startIcon={<SaveRoundedIcon />}
                       disabled={saving}
                       onClick={onSaveGeneral}
@@ -381,7 +381,7 @@ export default function AdminProfileSettingsPage() {
 
                     <Button
                       variant="outlined"
-                      size="small"
+                      size="medium"
                       disabled={saving}
                       onClick={onReset}
                       sx={{
@@ -404,7 +404,7 @@ export default function AdminProfileSettingsPage() {
               <Stack spacing={2.5} sx={{ maxWidth: 560 }}>
                 <Stack direction="row" spacing={1.25} className="items-center">
                   <Box className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-slate-50">
-                    <LockRoundedIcon fontSize="small" />
+                    <LockRoundedIcon fontSize="medium" />
                   </Box>
                   <Box>
                     <Typography className="text-sm font-bold text-slate-900">
@@ -465,7 +465,7 @@ export default function AdminProfileSettingsPage() {
 
                   <Button
                     variant="contained"
-                    size="small"
+                    size="medium"
                     startIcon={<SaveRoundedIcon />}
                     disabled={saving}
                     onClick={onChangePassword}
