@@ -47,7 +47,10 @@ function pricingLabel(t: PricingType) {
 
 function formatTHB(n: number) {
   const v = Number.isFinite(n) ? n : 0;
-  return new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(v) + " บาท";
+  return (
+    new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(v) +
+    " บาท"
+  );
 }
 
 function makeNextAddonId(rows: Addon[]) {
@@ -61,7 +64,9 @@ function makeNextAddonId(rows: Addon[]) {
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <Box className="grid grid-cols-1 gap-1 sm:grid-cols-[140px_1fr]">
-      <Typography className="text-sm font-medium text-slate-500">{label}</Typography>
+      <Typography className="text-sm font-medium text-slate-500">
+        {label}
+      </Typography>
       <Box className="text-sm font-semibold text-slate-900">{value}</Box>
     </Box>
   );
@@ -76,7 +81,9 @@ function SectionCard({
 }) {
   return (
     <Box className="rounded-2xl border border-slate-200 bg-white p-4">
-      <Typography className="text-sm font-extrabold text-slate-900">{title}</Typography>
+      <Typography className="text-sm font-extrabold text-slate-900">
+        {title}
+      </Typography>
       <Divider className="my-3 border-slate-200!" />
       <Stack spacing={2}>{children}</Stack>
     </Box>
@@ -126,11 +133,14 @@ export default function AdminAddonsPage() {
   ]);
 
   const [drawerMode, setDrawerMode] = React.useState<DrawerMode>(null);
-  const [selectedAddonId, setSelectedAddonId] = React.useState<string | null>(null);
+  const [selectedAddonId, setSelectedAddonId] = React.useState<string | null>(
+    null
+  );
 
   const [editTitle, setEditTitle] = React.useState("");
   const [editPrice, setEditPrice] = React.useState<number>(0);
-  const [editPricingType, setEditPricingType] = React.useState<PricingType>("perDay");
+  const [editPricingType, setEditPricingType] =
+    React.useState<PricingType>("perDay");
   const [editInventoryTrack, setEditInventoryTrack] = React.useState(false);
   const [editStock, setEditStock] = React.useState<number | null>(null);
   const [editActive, setEditActive] = React.useState(true);
@@ -222,7 +232,11 @@ export default function AdminAddonsPage() {
     );
 
     setDrawerMode(null);
-    setSnack({ open: true, msg: "บันทึกข้อมูลบริการเสริมเรียบร้อย", type: "success" });
+    setSnack({
+      open: true,
+      msg: "บันทึกข้อมูลบริการเสริมเรียบร้อย",
+      type: "success",
+    });
   };
 
   const createAddon = () => {
@@ -243,7 +257,11 @@ export default function AdminAddonsPage() {
 
     setAddons((prev) => [newAddon, ...prev]);
     setDrawerMode(null);
-    setSnack({ open: true, msg: "เพิ่มบริการเสริมใหม่เรียบร้อย", type: "success" });
+    setSnack({
+      open: true,
+      msg: "เพิ่มบริการเสริมใหม่เรียบร้อย",
+      type: "success",
+    });
   };
 
   const saveAddonForm = () => {
@@ -258,7 +276,10 @@ export default function AdminAddonsPage() {
     <>
       <Box className="grid gap-4">
         <Box>
-          <Typography variant="h6" className="text-xl font-extrabold text-slate-900">
+          <Typography
+            variant="h6"
+            className="text-xl font-extrabold text-slate-900"
+          >
             บริการเสริม
           </Typography>
           <Typography className="text-sm text-slate-600">
@@ -266,7 +287,10 @@ export default function AdminAddonsPage() {
           </Typography>
         </Box>
 
-        <Card elevation={0} className="rounded-2xl! border border-slate-200 bg-white">
+        <Card
+          elevation={0}
+          className="rounded-2xl! border border-slate-200 bg-white"
+        >
           <CardContent className="p-5">
             <Stack
               direction={{ xs: "column", sm: "row" }}
@@ -280,10 +304,12 @@ export default function AdminAddonsPage() {
 
                 <Box>
                   <Typography className="text-sm font-bold text-slate-900">
-                    ทั้งหมด {addons.length} รายการ • เปิดใช้งาน {activeCount} รายการ
+                    ทั้งหมด {addons.length} รายการ • เปิดใช้งาน {activeCount}{" "}
+                    รายการ
                   </Typography>
                   <Typography className="mt-1 text-xs text-slate-500">
-                    แนะนำ: เปิด “ตัดสต็อก” เฉพาะบริการที่มีจำนวนจำกัด เช่น คาร์ซีทเด็ก
+                    แนะนำ: เปิด “ตัดสต็อก” เฉพาะบริการที่มีจำนวนจำกัด เช่น
+                    คาร์ซีทเด็ก
                   </Typography>
                 </Box>
               </Stack>
@@ -309,7 +335,10 @@ export default function AdminAddonsPage() {
           </CardContent>
         </Card>
 
-        <Card elevation={0} className="rounded-2xl! border border-slate-200 bg-white">
+        <Card
+          elevation={0}
+          className="rounded-2xl! border border-slate-200 bg-white"
+        >
           <CardContent className="p-0">
             <Box className="px-5 py-4 flex items-center justify-between">
               <Typography className="text-sm font-bold text-slate-900">
@@ -333,13 +362,21 @@ export default function AdminAddonsPage() {
                       alignItems: { xs: "flex-start", md: "stretch" },
                     }}
                   >
-                    <Stack direction="row" spacing={1.5} className="items-start min-w-0 flex-1 w-full">
+                    <Stack
+                      direction="row"
+                      spacing={1.5}
+                      className="items-start min-w-0 flex-1 w-full"
+                    >
                       <Box className="grid h-16 w-16 place-items-center rounded-2xl border border-slate-200 bg-slate-50 shrink-0">
                         <Inventory2RoundedIcon fontSize="small" />
                       </Box>
 
                       <Box className="min-w-0 flex-1">
-                        <Stack direction="row" spacing={1} className="items-center flex-wrap">
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          className="items-center flex-wrap"
+                        >
                           <Typography className="text-sm font-extrabold text-slate-900 tracking-wide">
                             {a.id}
                           </Typography>
@@ -368,7 +405,9 @@ export default function AdminAddonsPage() {
                         <Typography className="mt-1 text-xs text-slate-500">
                           ระบบสต็อก:{" "}
                           <span className="font-medium text-slate-700">
-                            {a.inventoryTrack ? `ตัดสต็อก • คงเหลือ ${a.stock ?? 0}` : "ไม่ตัดสต็อก"}
+                            {a.inventoryTrack
+                              ? `ตัดสต็อก • คงเหลือ ${a.stock ?? 0}`
+                              : "ไม่ตัดสต็อก"}
                           </span>
                         </Typography>
                       </Box>
@@ -383,13 +422,20 @@ export default function AdminAddonsPage() {
                       }}
                     >
                       <Box className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                        <Typography className="text-xs text-slate-500">สถานะ</Typography>
+                        <Typography className="text-xs text-slate-500">
+                          สถานะ
+                        </Typography>
                         <Typography className="text-sm font-semibold text-slate-900">
                           {a.active ? "เปิดใช้งาน" : "ปิดใช้งาน"}
                         </Typography>
                       </Box>
 
-                      <Stack direction="row" spacing={1} className="justify-end" sx={{ mt: { md: "auto" } }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        className="justify-end"
+                        sx={{ mt: { md: "auto" } }}
+                      >
                         <Button
                           size="medium"
                           variant="outlined"
@@ -425,7 +471,9 @@ export default function AdminAddonsPage() {
                   </Stack>
                 </Box>
 
-                {idx !== addons.length - 1 && <Divider className="border-slate-200!" />}
+                {idx !== addons.length - 1 && (
+                  <Divider className="border-slate-200!" />
+                )}
               </Box>
             ))}
           </CardContent>
@@ -448,11 +496,21 @@ export default function AdminAddonsPage() {
         }}
       >
         <Box className="p-4">
-          <Stack direction="row" spacing={1.25} className="items-center justify-between">
-            <Stack direction="row" spacing={1.25} className="items-center min-w-0">
+          <Stack
+            direction="row"
+            spacing={1.25}
+            className="items-center justify-between"
+          >
+            <Stack
+              direction="row"
+              spacing={1.25}
+              className="items-center min-w-0"
+            >
               <Box className="min-w-0">
                 <Typography className="text-sm font-black text-slate-900">
-                  {drawerMode === "create" ? "เพิ่มบริการเสริมใหม่" : "แก้ไขบริการเสริม"}
+                  {drawerMode === "create"
+                    ? "เพิ่มบริการเสริมใหม่"
+                    : "แก้ไขบริการเสริม"}
                 </Typography>
                 <Typography className="text-xs text-slate-500">
                   {drawerMode === "create"
@@ -473,7 +531,8 @@ export default function AdminAddonsPage() {
 
           <Divider className="my-4! border-slate-200!" />
 
-          {(drawerMode === "create" || (drawerMode === "detail" && selectedAddon)) ? (
+          {drawerMode === "create" ||
+          (drawerMode === "detail" && selectedAddon) ? (
             <Stack spacing={2}>
               <Box className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 <Box
@@ -500,9 +559,12 @@ export default function AdminAddonsPage() {
                       {editTitle || "บริการเสริม"}
                     </Typography>
                     <Typography className="mt-2 text-sm text-slate-200">
-                      {pricingLabel(editPricingType)} • {editInventoryTrack ? "ตัดสต็อก" : "ไม่ตัดสต็อก"}
+                      {pricingLabel(editPricingType)} •{" "}
+                      {editInventoryTrack ? "ตัดสต็อก" : "ไม่ตัดสต็อก"}
                     </Typography>
-                    <Typography className="mt-4 text-sm text-slate-300">ราคา</Typography>
+                    <Typography className="mt-4 text-sm text-slate-300">
+                      ราคา
+                    </Typography>
                     <Typography className="text-2xl font-extrabold">
                       {formatTHB(Number(editPrice) || 0)}
                     </Typography>
@@ -537,18 +599,27 @@ export default function AdminAddonsPage() {
                     fullWidth
                     label="คิดราคาแบบ"
                     value={editPricingType}
-                    onChange={(e) => setEditPricingType(e.target.value as PricingType)}
+                    onChange={(e) =>
+                      setEditPricingType(e.target.value as PricingType)
+                    }
                     sx={roundedFieldSX}
                   >
                     <MenuItem value="perDay">ต่อวัน</MenuItem>
                     <MenuItem value="perTrip">ต่อครั้ง</MenuItem>
                   </TextField>
 
-                  <InfoRow label="ราคาแสดงผล" value={formatTHB(Number(editPrice) || 0)} />
+                  <InfoRow
+                    label="ราคาแสดงผล"
+                    value={formatTHB(Number(editPrice) || 0)}
+                  />
                 </SectionCard>
 
                 <SectionCard title="คลังสินค้า">
-                  <Stack direction="row" spacing={1} className="items-center justify-between">
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    className="items-center justify-between"
+                  >
                     <Typography className="text-sm font-medium text-slate-700">
                       ตัดสต็อก (Inventory Track)
                     </Typography>
@@ -581,7 +652,11 @@ export default function AdminAddonsPage() {
                 </SectionCard>
 
                 <SectionCard title="การใช้งาน">
-                  <Stack direction="row" spacing={1} className="items-center justify-between">
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    className="items-center justify-between"
+                  >
                     <Typography className="text-sm font-medium text-slate-700">
                       เปิดใช้งาน
                     </Typography>
@@ -664,7 +739,8 @@ export default function AdminAddonsPage() {
         open={snack.open}
         autoHideDuration={2500}
         onClose={() => setSnack((s) => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        sx={{ top: 24 }}
       >
         <Alert
           severity={snack.type}
