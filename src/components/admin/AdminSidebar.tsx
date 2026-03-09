@@ -54,8 +54,8 @@ export default function AdminSidebar({
     >
       <Box className="p-2 sm:p-2.5 md:p-3 lg:p-3" sx={{ flex: "0 0 auto" }}>
         <Stack direction="row" spacing={1.25} alignItems="center">
-          <Box className="grid h-10 w-10 place-items-center rounded-xl! border border-slate-200 bg-slate-50">
-            <DirectionsCarRoundedIcon fontSize="small" />
+          <Box className="grid h-10 w-10 place-items-center rounded-lg! border border-slate-200 bg-slate-50">
+            <DirectionsCarRoundedIcon fontSize="medium" />
           </Box>
           <Box>
             <Typography className="text-sm font-extrabold text-slate-900">
