@@ -110,7 +110,10 @@ function getNextDisplayOrder(rows: Branch[]) {
 
 function formatTHB(n: number) {
   const value = Number.isFinite(n) ? n : 0;
-  return new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(value) + " บาท";
+  return (
+    new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(value) +
+    " บาท"
+  );
 }
 
 function branchTypeLabel(type: BranchType) {
@@ -145,17 +148,17 @@ function BranchTypeChip({ type }: { type: BranchType }) {
   const sx =
     type === "airport"
       ? {
-        border: "1px solid rgb(186 230 253)",
-        bgcolor: "rgb(224 242 254)",
-        color: "rgb(3 105 161)",
-      }
+          border: "1px solid rgb(186 230 253)",
+          bgcolor: "rgb(224 242 254)",
+          color: "rgb(3 105 161)",
+        }
       : type === "storefront"
-        ? {
+      ? {
           border: "1px solid rgb(167 243 208)",
           bgcolor: "rgb(209 250 229)",
           color: "rgb(6 95 70)",
         }
-        : {
+      : {
           border: "1px solid rgb(226 232 240)",
           bgcolor: "rgb(248 250 252)",
           color: "rgb(51 65 85)",
@@ -178,7 +181,9 @@ function BranchTypeChip({ type }: { type: BranchType }) {
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <Box className="grid grid-cols-1 gap-1 sm:grid-cols-[160px_1fr]">
-      <Typography className="text-sm font-medium text-slate-500">{label}</Typography>
+      <Typography className="text-sm font-medium text-slate-500">
+        {label}
+      </Typography>
       <Box className="text-sm font-semibold text-slate-900">{value}</Box>
     </Box>
   );
@@ -193,7 +198,9 @@ function SectionCard({
 }) {
   return (
     <Box className="rounded-2xl border border-slate-200 bg-white p-4">
-      <Typography className="text-sm font-extrabold text-slate-900">{title}</Typography>
+      <Typography className="text-sm font-extrabold text-slate-900">
+        {title}
+      </Typography>
       <Divider className="my-3 border-slate-200!" />
       <Stack spacing={2}>{children}</Stack>
     </Box>
@@ -240,7 +247,9 @@ export default function AdminLocationsPage() {
   ]);
 
   const [drawerMode, setDrawerMode] = React.useState<DrawerMode>(null);
-  const [selectedBranchId, setSelectedBranchId] = React.useState<string | null>(null);
+  const [selectedBranchId, setSelectedBranchId] = React.useState<string | null>(
+    null
+  );
 
   const [editName, setEditName] = React.useState("");
   const [editAddress, setEditAddress] = React.useState("");
@@ -276,7 +285,8 @@ export default function AdminLocationsPage() {
 
   const sortedBranches = React.useMemo(() => {
     return [...branches].sort((a, b) => {
-      if (a.displayOrder !== b.displayOrder) return a.displayOrder - b.displayOrder;
+      if (a.displayOrder !== b.displayOrder)
+        return a.displayOrder - b.displayOrder;
       return a.name.localeCompare(b.name);
     });
   }, [branches]);
@@ -286,8 +296,7 @@ export default function AdminLocationsPage() {
     if (!q) return [];
     return MOCK_PLACE_RESULTS.filter(
       (p) =>
-        p.label.toLowerCase().includes(q) ||
-        p.address.toLowerCase().includes(q)
+        p.label.toLowerCase().includes(q) || p.address.toLowerCase().includes(q)
     ).slice(0, 5);
   }, [mapQuery]);
 
@@ -463,20 +472,20 @@ export default function AdminLocationsPage() {
     const updatedRows = branches.map((b) =>
       b.id === selectedBranch.id
         ? {
-          ...b,
-          name: editName.trim(),
-          address: editAddress.trim(),
-          active: editActive,
-          displayOrder: Number(editDisplayOrder) || 1,
-          type: editType,
-          lat: editLat.trim(),
-          lng: editLng.trim(),
-          pickupAvailable: editPickupAvailable,
-          returnAvailable: editReturnAvailable,
-          openTime: editOpenTime,
-          closeTime: editCloseTime,
-          extraFee: Number(editExtraFee) || 0,
-        }
+            ...b,
+            name: editName.trim(),
+            address: editAddress.trim(),
+            active: editActive,
+            displayOrder: Number(editDisplayOrder) || 1,
+            type: editType,
+            lat: editLat.trim(),
+            lng: editLng.trim(),
+            pickupAvailable: editPickupAvailable,
+            returnAvailable: editReturnAvailable,
+            openTime: editOpenTime,
+            closeTime: editCloseTime,
+            extraFee: Number(editExtraFee) || 0,
+          }
         : b
     );
 
@@ -500,9 +509,9 @@ export default function AdminLocationsPage() {
       prev.map((b) =>
         b.id === selectedBranch.id
           ? {
-            ...b,
-            active: nextActive,
-          }
+              ...b,
+              active: nextActive,
+            }
           : b
       )
     );
@@ -553,7 +562,10 @@ export default function AdminLocationsPage() {
     <>
       <Box className="grid gap-4">
         <Box>
-          <Typography variant="h6" className="text-xl font-extrabold text-slate-900">
+          <Typography
+            variant="h6"
+            className="text-xl font-extrabold text-slate-900"
+          >
             จัดการจุดรับ-ส่ง / สาขา
           </Typography>
           <Typography className="text-sm text-slate-600">
@@ -561,7 +573,10 @@ export default function AdminLocationsPage() {
           </Typography>
         </Box>
 
-        <Card elevation={0} className="rounded-2xl! border border-slate-200 bg-white">
+        <Card
+          elevation={0}
+          className="rounded-2xl! border border-slate-200 bg-white"
+        >
           <CardContent className="p-5">
             <Stack
               direction={{ xs: "column", sm: "row" }}
@@ -575,7 +590,8 @@ export default function AdminLocationsPage() {
 
                 <Box>
                   <Typography className="text-sm font-bold text-slate-900">
-                    โหมดสาขา: {branchesEnabled ? "เปิด" : "ปิด"} • ทั้งหมด {branches.length} • ใช้งาน {activeCount}
+                    โหมดสาขา: {branchesEnabled ? "เปิด" : "ปิด"} • ทั้งหมด{" "}
+                    {branches.length} • ใช้งาน {activeCount}
                   </Typography>
                   <Typography className="mt-1 text-xs text-slate-500">
                     ปิด = ลูกค้าพิมพ์สถานที่เอง / เปิด = ลูกค้าเลือกจาก dropdown
@@ -583,10 +599,16 @@ export default function AdminLocationsPage() {
                 </Box>
               </Stack>
 
-              <Stack direction="row" spacing={1} className="items-center flex-wrap">
+              <Stack
+                direction="row"
+                spacing={1}
+                className="items-center flex-wrap"
+              >
                 <Tooltip title="เปิด/ปิดโหมดสาขา">
                   <Stack direction="row" spacing={1} className="items-center">
-                    <Typography className="text-xs text-slate-600">Enterprise Mode</Typography>
+                    <Typography className="text-xs text-slate-600">
+                      Enterprise Mode
+                    </Typography>
                     <Switch
                       checked={branchesEnabled}
                       onChange={(e) => setBranchesEnabled(e.target.checked)}
@@ -617,13 +639,18 @@ export default function AdminLocationsPage() {
         </Card>
 
         {branchesEnabled ? (
-          <Card elevation={0} className="rounded-2xl! border border-slate-200 bg-white">
+          <Card
+            elevation={0}
+            className="rounded-2xl! border border-slate-200 bg-white"
+          >
             <CardContent className="p-0">
               <Box className="px-5 py-4 flex items-center justify-between">
                 <Typography className="text-sm font-bold text-slate-900">
                   รายการสาขา / จุดรับ-ส่ง
                 </Typography>
-                <Typography className="text-xs text-slate-500">{sortedBranches.length} รายการ</Typography>
+                <Typography className="text-xs text-slate-500">
+                  {sortedBranches.length} รายการ
+                </Typography>
               </Box>
 
               <Divider className="border-slate-200!" />
@@ -632,7 +659,10 @@ export default function AdminLocationsPage() {
                 const mapsUrl = buildGoogleMapsUrl(b.lat, b.lng);
 
                 return (
-                  <Box key={b.id} className="hover:bg-slate-50 transition-colors">
+                  <Box
+                    key={b.id}
+                    className="hover:bg-slate-50 transition-colors"
+                  >
                     <Box className="p-5">
                       <Stack
                         direction={{ xs: "column", md: "row" }}
@@ -640,13 +670,21 @@ export default function AdminLocationsPage() {
                         className="items-start justify-between"
                         sx={{ alignItems: { xs: "flex-start", md: "stretch" } }}
                       >
-                        <Stack direction="row" spacing={1.5} className="items-start min-w-0 flex-1 w-full">
+                        <Stack
+                          direction="row"
+                          spacing={1.5}
+                          className="items-start min-w-0 flex-1 w-full"
+                        >
                           <Box className="grid h-16 w-16 place-items-center rounded-2xl border border-slate-200 bg-slate-50 shrink-0">
                             <PlaceRoundedIcon fontSize="small" />
                           </Box>
 
                           <Box className="min-w-0 flex-1">
-                            <Stack direction="row" spacing={1} className="items-center flex-wrap">
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              className="items-center flex-wrap"
+                            >
                               <Typography className="text-sm font-extrabold text-slate-900 tracking-wide">
                                 {b.id}
                               </Typography>
@@ -667,7 +705,10 @@ export default function AdminLocationsPage() {
                             <Divider className="my-2 border-slate-200!" />
 
                             <Typography className="text-xs text-slate-500">
-                              ที่อยู่: <span className="font-medium text-slate-700">{b.address || "ยังไม่ได้ระบุ"}</span>
+                              ที่อยู่:{" "}
+                              <span className="font-medium text-slate-700">
+                                {b.address || "ยังไม่ได้ระบุ"}
+                              </span>
                             </Typography>
 
                             <Typography className="mt-1 text-xs text-slate-500">
@@ -680,7 +721,8 @@ export default function AdminLocationsPage() {
                             <Typography className="mt-1 text-xs text-slate-500">
                               บริการ:{" "}
                               <span className="font-medium text-slate-700">
-                                {b.pickupAvailable ? "รับรถได้" : "รับรถไม่ได้"} •{" "}
+                                {b.pickupAvailable ? "รับรถได้" : "รับรถไม่ได้"}{" "}
+                                •{" "}
                                 {b.returnAvailable ? "คืนรถได้" : "คืนรถไม่ได้"}
                               </span>
                             </Typography>
@@ -688,14 +730,18 @@ export default function AdminLocationsPage() {
                             <Typography className="mt-1 text-xs text-slate-500">
                               ค่าบริการเพิ่ม:{" "}
                               <span className="font-medium text-slate-700">
-                                {b.extraFee > 0 ? formatTHB(b.extraFee) : "ไม่มี"}
+                                {b.extraFee > 0
+                                  ? formatTHB(b.extraFee)
+                                  : "ไม่มี"}
                               </span>
                             </Typography>
 
                             <Typography className="mt-1 text-xs text-slate-500">
                               พิกัด:{" "}
                               <span className="font-medium text-slate-700">
-                                {b.lat && b.lng ? `${b.lat}, ${b.lng}` : "ยังไม่ได้ระบุ"}
+                                {b.lat && b.lng
+                                  ? `${b.lat}, ${b.lng}`
+                                  : "ยังไม่ได้ระบุ"}
                               </span>
                             </Typography>
 
@@ -731,13 +777,19 @@ export default function AdminLocationsPage() {
                           }}
                         >
                           <Box className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                            <Typography className="text-xs text-slate-500">สถานะ</Typography>
+                            <Typography className="text-xs text-slate-500">
+                              สถานะ
+                            </Typography>
                             <Typography className="text-sm font-semibold text-slate-900">
                               {b.active ? "เปิดใช้งาน" : "ปิดใช้งาน"}
                             </Typography>
                           </Box>
 
-                          <Stack direction="row" spacing={1} className="justify-end flex-wrap">
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            className="justify-end flex-wrap"
+                          >
                             <Tooltip title="เลื่อนขึ้น">
                               <span>
                                 <IconButton
@@ -797,14 +849,18 @@ export default function AdminLocationsPage() {
                       </Stack>
                     </Box>
 
-                    {idx !== sortedBranches.length - 1 && <Divider className="border-slate-200!" />}
+                    {idx !== sortedBranches.length - 1 && (
+                      <Divider className="border-slate-200!" />
+                    )}
                   </Box>
                 );
               })}
 
               {sortedBranches.length === 0 ? (
                 <Box className="px-5 py-10 text-center">
-                  <Typography className="text-sm font-semibold text-slate-900">ยังไม่มีสาขา</Typography>
+                  <Typography className="text-sm font-semibold text-slate-900">
+                    ยังไม่มีสาขา
+                  </Typography>
                   <Typography className="mt-1 text-xs text-slate-500">
                     กด “เพิ่มสาขา” เพื่อเริ่มต้น
                   </Typography>
@@ -813,23 +869,33 @@ export default function AdminLocationsPage() {
             </CardContent>
           </Card>
         ) : (
-          <Card elevation={0} className="rounded-2xl! border border-slate-200 bg-white">
+          <Card
+            elevation={0}
+            className="rounded-2xl! border border-slate-200 bg-white"
+          >
             <CardContent className="p-5">
               <Typography className="text-sm font-bold text-slate-900">
                 ปิดโหมดสาขาอยู่
               </Typography>
               <Typography className="mt-1 text-xs text-slate-500">
-                ลูกค้าจะพิมพ์สถานที่รับ/คืนเอง เหมาะกับธุรกิจที่รับ-คืนแบบยืดหยุ่น
+                ลูกค้าจะพิมพ์สถานที่รับ/คืนเอง
+                เหมาะกับธุรกิจที่รับ-คืนแบบยืดหยุ่น
               </Typography>
             </CardContent>
           </Card>
         )}
 
-        <Card elevation={0} className="rounded-2xl! border border-slate-200 bg-white">
+        <Card
+          elevation={0}
+          className="rounded-2xl! border border-slate-200 bg-white"
+        >
           <CardContent className="p-5">
-            <Typography className="text-sm font-bold text-slate-900">แนะนำการใช้งาน</Typography>
+            <Typography className="text-sm font-bold text-slate-900">
+              แนะนำการใช้งาน
+            </Typography>
             <Typography className="mt-1 text-xs text-slate-500">
-              ถ้ามีหลายจุดรับ-ส่ง เช่น สนามบินหรือหลายสาขา ให้เปิด Enterprise Mode และเปิด Active เฉพาะจุดที่พร้อมบริการ
+              ถ้ามีหลายจุดรับ-ส่ง เช่น สนามบินหรือหลายสาขา ให้เปิด Enterprise
+              Mode และเปิด Active เฉพาะจุดที่พร้อมบริการ
             </Typography>
           </CardContent>
         </Card>
@@ -851,22 +917,30 @@ export default function AdminLocationsPage() {
         }}
       >
         <Box className="p-4">
-          <Stack direction="row" spacing={1.25} className="items-center justify-between">
-            <Stack direction="row" spacing={1.25} className="items-center min-w-0">
+          <Stack
+            direction="row"
+            spacing={1.25}
+            className="items-center justify-between"
+          >
+            <Stack
+              direction="row"
+              spacing={1.25}
+              className="items-center min-w-0"
+            >
               <Box className="min-w-0">
                 <Typography className="text-sm font-black text-slate-900">
                   {drawerMode === "create"
                     ? "เพิ่มสาขาใหม่"
                     : drawerMode === "detail"
-                      ? "แก้ไขข้อมูลสาขา"
-                      : "จัดการสถานะสาขา"}
+                    ? "แก้ไขข้อมูลสาขา"
+                    : "จัดการสถานะสาขา"}
                 </Typography>
                 <Typography className="text-xs text-slate-500">
                   {drawerMode === "create"
                     ? "กรอกข้อมูลสาขาใหม่"
                     : selectedBranch
-                      ? `${selectedBranch.id} • ${selectedBranch.name}`
-                      : "-"}
+                    ? `${selectedBranch.id} • ${selectedBranch.name}`
+                    : "-"}
                 </Typography>
               </Box>
             </Stack>
@@ -878,7 +952,8 @@ export default function AdminLocationsPage() {
 
           <Divider className="my-4! border-slate-200!" />
 
-          {(drawerMode === "create" || (drawerMode === "detail" && selectedBranch)) ? (
+          {drawerMode === "create" ||
+          (drawerMode === "detail" && selectedBranch) ? (
             <Stack spacing={2}>
               <Box className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 <Box
@@ -899,7 +974,9 @@ export default function AdminLocationsPage() {
 
                   <Box className="absolute inset-x-0 top-0 p-4 text-white">
                     <Typography className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
-                      {drawerMode === "create" ? "New Branch" : "Branch Overview"}
+                      {drawerMode === "create"
+                        ? "New Branch"
+                        : "Branch Overview"}
                     </Typography>
                     <Typography className="mt-2 text-xl font-extrabold">
                       {editName || "สาขาใหม่"}
@@ -952,12 +1029,18 @@ export default function AdminLocationsPage() {
                     type="number"
                     label="ลำดับการแสดง"
                     value={editDisplayOrder}
-                    onChange={(e) => setEditDisplayOrder(Number(e.target.value))}
+                    onChange={(e) =>
+                      setEditDisplayOrder(Number(e.target.value))
+                    }
                     inputProps={{ min: 1 }}
                     sx={roundedFieldSX}
                   />
 
-                  <Stack direction="row" spacing={1} className="items-center justify-between">
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    className="items-center justify-between"
+                  >
                     <Typography className="text-sm font-medium text-slate-700">
                       เปิดใช้งาน
                     </Typography>
@@ -968,11 +1051,18 @@ export default function AdminLocationsPage() {
                     />
                   </Stack>
 
-                  <InfoRow label="สถานะ" value={<BranchStatusChip active={editActive} />} />
+                  <InfoRow
+                    label="สถานะ"
+                    value={<BranchStatusChip active={editActive} />}
+                  />
                 </SectionCard>
 
                 <SectionCard title="การให้บริการ">
-                  <Stack direction="row" spacing={1} className="items-center justify-between">
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    className="items-center justify-between"
+                  >
                     <Typography className="text-sm font-medium text-slate-700">
                       รับรถได้
                     </Typography>
@@ -983,7 +1073,11 @@ export default function AdminLocationsPage() {
                     />
                   </Stack>
 
-                  <Stack direction="row" spacing={1} className="items-center justify-between">
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    className="items-center justify-between"
+                  >
                     <Typography className="text-sm font-medium text-slate-700">
                       คืนรถได้
                     </Typography>
@@ -1036,7 +1130,11 @@ export default function AdminLocationsPage() {
                     placeholder="เช่น ดอนเมือง / รัชดา / สุพรรณบุรี"
                     sx={roundedFieldSX}
                     InputProps={{
-                      startAdornment: <SearchRoundedIcon sx={{ mr: 1, color: "rgb(100 116 139)" }} />,
+                      startAdornment: (
+                        <SearchRoundedIcon
+                          sx={{ mr: 1, color: "rgb(100 116 139)" }}
+                        />
+                      ),
                     }}
                   />
 
@@ -1108,21 +1206,32 @@ export default function AdminLocationsPage() {
                 </SectionCard>
 
                 <SectionCard title="สรุป">
-                  <InfoRow label="ประเภท" value={<BranchTypeChip type={editType} />} />
+                  <InfoRow
+                    label="ประเภท"
+                    value={<BranchTypeChip type={editType} />}
+                  />
                   <InfoRow label="ลำดับ" value={editDisplayOrder} />
                   <InfoRow
                     label="การให้บริการ"
-                    value={`${editPickupAvailable ? "รับรถได้" : "รับรถไม่ได้"} • ${editReturnAvailable ? "คืนรถได้" : "คืนรถไม่ได้"
-                      }`}
+                    value={`${
+                      editPickupAvailable ? "รับรถได้" : "รับรถไม่ได้"
+                    } • ${editReturnAvailable ? "คืนรถได้" : "คืนรถไม่ได้"}`}
                   />
-                  <InfoRow label="เวลาเปิด-ปิด" value={`${editOpenTime} - ${editCloseTime}`} />
+                  <InfoRow
+                    label="เวลาเปิด-ปิด"
+                    value={`${editOpenTime} - ${editCloseTime}`}
+                  />
                   <InfoRow
                     label="ค่าบริการเพิ่ม"
                     value={editExtraFee > 0 ? formatTHB(editExtraFee) : "ไม่มี"}
                   />
                   <InfoRow
                     label="พิกัด"
-                    value={editLat && editLng ? `${editLat}, ${editLng}` : "ยังไม่ได้ระบุ"}
+                    value={
+                      editLat && editLng
+                        ? `${editLat}, ${editLng}`
+                        : "ยังไม่ได้ระบุ"
+                    }
                   />
                 </SectionCard>
               </Box>
@@ -1215,7 +1324,11 @@ export default function AdminLocationsPage() {
                   </Stack>
                 </Stack>
 
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} className="mt-4">
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={1.2}
+                  className="mt-4"
+                >
                   {quickActions.map((action) => {
                     const isActive = nextActive === action.value;
 
@@ -1231,14 +1344,14 @@ export default function AdminLocationsPage() {
                           borderRadius: 2.5,
                           ...(isActive
                             ? {
-                              bgcolor: "rgb(15 23 42)",
-                              color: "white",
-                              boxShadow: "none",
-                              "&:hover": {
-                                bgcolor: "rgb(2 6 23)",
+                                bgcolor: "rgb(15 23 42)",
+                                color: "white",
                                 boxShadow: "none",
-                              },
-                            }
+                                "&:hover": {
+                                  bgcolor: "rgb(2 6 23)",
+                                  boxShadow: "none",
+                                },
+                              }
                             : action.sx),
                         }}
                       >
@@ -1291,7 +1404,8 @@ export default function AdminLocationsPage() {
         open={snack.open}
         autoHideDuration={2500}
         onClose={() => setSnack((s) => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        sx={{ top: 24 }}
       >
         <Alert
           severity={snack.type}
