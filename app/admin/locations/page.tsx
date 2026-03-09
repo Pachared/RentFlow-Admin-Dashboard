@@ -1,27 +1,28 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
   Box,
-  Typography,
   Card,
   CardContent,
-  Divider,
-  Switch,
+  Typography,
   Stack,
-  Button,
-  Chip,
-  Tooltip,
-  Drawer,
-  IconButton,
-  Snackbar,
-  Alert,
   TextField,
   MenuItem,
+  Chip,
+  Divider,
+  Button,
+  Drawer,
+  Snackbar,
+  Alert,
+  IconButton,
+  Tooltip,
+  Switch,
   useTheme,
   useMediaQuery,
+  styled,
 } from "@mui/material";
+import type { SwitchProps } from "@mui/material/Switch";
 
 import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -36,8 +37,9 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import RoomRoundedIcon from "@mui/icons-material/RoomRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 
-type DrawerMode = "create" | "detail" | "status" | null;
+type DrawerMode = "create" | "detail" | "status" | "delete" | null;
 type BranchType = "airport" | "storefront" | "meeting_point";
+type BranchFilterStatus = "all" | "active" | "inactive";
 
 type Branch = {
   id: string;
@@ -53,6 +55,8 @@ type Branch = {
   openTime: string;
   closeTime: string;
   extraFee: number;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 type MockPlaceResult = {
@@ -100,7 +104,7 @@ function makeNextBranchId(rows: Branch[]) {
     .map((r) => Number(r.id.replace(/[^\d]/g, "")))
     .filter((n) => Number.isFinite(n));
   const next = nums.length ? Math.max(...nums) + 1 : 1;
-  return `B${next}`;
+  return `B${String(next).padStart(3, "0")}`;
 }
 
 function getNextDisplayOrder(rows: Branch[]) {
@@ -110,10 +114,20 @@ function getNextDisplayOrder(rows: Branch[]) {
 
 function formatTHB(n: number) {
   const value = Number.isFinite(n) ? n : 0;
-  return (
-    new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(value) +
-    " บาท"
-  );
+  const num = new Intl.NumberFormat("th-TH", {
+    maximumFractionDigits: 0,
+  }).format(value);
+  return `${num} บาท`;
+}
+
+function getNowString() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  return `${y}-${m}-${d} ${hh}:${mm}`;
 }
 
 function branchTypeLabel(type: BranchType) {
@@ -127,19 +141,45 @@ function buildGoogleMapsUrl(lat?: string, lng?: string) {
   return `https://maps.google.com/?q=${lat.trim()},${lng.trim()}`;
 }
 
+function getBranchStatusMeta(active: boolean) {
+  return active
+    ? { label: "เปิดใช้งาน", tone: "emerald" as const }
+    : { label: "ปิดใช้งาน", tone: "slate" as const };
+}
+
+function statusChipSX(tone: "emerald" | "amber" | "slate") {
+  if (tone === "emerald") {
+    return {
+      border: "1px solid rgb(167 243 208)",
+      bgcolor: "rgb(209 250 229)",
+      color: "rgb(6 95 70)",
+    };
+  }
+
+  if (tone === "amber") {
+    return {
+      border: "1px solid rgb(253 230 138)",
+      bgcolor: "rgb(254 243 199)",
+      color: "rgb(146 64 14)",
+    };
+  }
+
+  return {
+    border: "1px solid rgb(226 232 240)",
+    bgcolor: "rgb(248 250 252)",
+    color: "rgb(51 65 85)",
+  };
+}
+
 function BranchStatusChip({ active }: { active: boolean }) {
+  const meta = getBranchStatusMeta(active);
+
   return (
     <Chip
-      size="small"
-      label={active ? "Active" : "Inactive"}
-      sx={{
-        height: 22,
-        fontSize: 11,
-        bgcolor: active ? "rgb(226 232 240)" : "rgb(241 245 249)",
-        border: "1px solid rgb(226 232 240)",
-        color: "rgb(30 41 59)",
-        fontWeight: 800,
-      }}
+      size="medium"
+      label={meta.label}
+      variant="outlined"
+      sx={statusChipSX(meta.tone)}
     />
   );
 }
@@ -166,21 +206,17 @@ function BranchTypeChip({ type }: { type: BranchType }) {
 
   return (
     <Chip
-      size="small"
+      size="medium"
       label={branchTypeLabel(type)}
-      sx={{
-        ...sx,
-        height: 22,
-        fontSize: 11,
-        fontWeight: 800,
-      }}
+      variant="outlined"
+      sx={sx}
     />
   );
 }
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <Box className="grid grid-cols-1 gap-1 sm:grid-cols-[160px_1fr]">
+    <Box className="grid grid-cols-1 gap-1 sm:grid-cols-[140px_1fr]">
       <Typography className="text-sm font-medium text-slate-500">
         {label}
       </Typography>
@@ -198,14 +234,62 @@ function SectionCard({
 }) {
   return (
     <Box className="rounded-2xl border border-slate-200 bg-white p-4">
-      <Typography className="text-sm font-extrabold text-slate-900">
+      <Typography className="text-xs font-bold uppercase tracking-wider text-slate-500">
         {title}
       </Typography>
-      <Divider className="my-3 border-slate-200!" />
+      <Divider className="my-3! border-slate-200!" />
       <Stack spacing={2}>{children}</Stack>
     </Box>
   );
 }
+
+const IOSSwitch = styled((props: SwitchProps) => (
+  <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
+))(({ theme }) => ({
+  width: 42,
+  height: 26,
+  padding: 0,
+  "& .MuiSwitch-switchBase": {
+    padding: 0,
+    margin: 2,
+    transitionDuration: "300ms",
+    "&.Mui-checked": {
+      transform: "translateX(16px)",
+      color: "#fff",
+      "& + .MuiSwitch-track": {
+        backgroundColor: "#65C466",
+        opacity: 1,
+        border: 0,
+      },
+      "&.Mui-disabled + .MuiSwitch-track": {
+        opacity: 0.5,
+      },
+    },
+    "&.Mui-focusVisible .MuiSwitch-thumb": {
+      color: "#33cf4d",
+      border: "6px solid #fff",
+    },
+    "&.Mui-disabled .MuiSwitch-thumb": {
+      color: theme.palette.grey[100],
+    },
+    "&.Mui-disabled + .MuiSwitch-track": {
+      opacity: 0.7,
+    },
+  },
+  "& .MuiSwitch-thumb": {
+    boxSizing: "border-box",
+    width: 22,
+    height: 22,
+  },
+  "& .MuiSwitch-track": {
+    borderRadius: 13,
+    backgroundColor: "#E9E9EA",
+    opacity: 1,
+    transition: theme.transitions.create(["background-color"], {
+      duration: 500,
+    }),
+  },
+}));
 
 export default function AdminLocationsPage() {
   const theme = useTheme();
@@ -215,9 +299,9 @@ export default function AdminLocationsPage() {
 
   const [branches, setBranches] = React.useState<Branch[]>([
     {
-      id: "B1",
+      id: "B001",
       name: "สาขากรุงเทพฯ",
-      address: "รัชดา",
+      address: "รัชดา กรุงเทพฯ",
       active: true,
       displayOrder: 1,
       type: "storefront",
@@ -228,11 +312,13 @@ export default function AdminLocationsPage() {
       openTime: "08:00",
       closeTime: "20:00",
       extraFee: 0,
+      createdAt: "2026-03-01 09:30",
+      updatedAt: "2026-03-02 11:20",
     },
     {
-      id: "B2",
+      id: "B002",
       name: "สนามบินดอนเมือง",
-      address: "DMK",
+      address: "สนามบินดอนเมือง กรุงเทพฯ",
       active: true,
       displayOrder: 2,
       type: "airport",
@@ -243,8 +329,13 @@ export default function AdminLocationsPage() {
       openTime: "06:00",
       closeTime: "23:00",
       extraFee: 300,
+      createdAt: "2026-03-01 10:10",
+      updatedAt: "2026-03-01 10:10",
     },
   ]);
+
+  const [q, setQ] = React.useState("");
+  const [status, setStatus] = React.useState<BranchFilterStatus>("all");
 
   const [drawerMode, setDrawerMode] = React.useState<DrawerMode>(null);
   const [selectedBranchId, setSelectedBranchId] = React.useState<string | null>(
@@ -285,23 +376,53 @@ export default function AdminLocationsPage() {
 
   const sortedBranches = React.useMemo(() => {
     return [...branches].sort((a, b) => {
-      if (a.displayOrder !== b.displayOrder)
+      if (a.displayOrder !== b.displayOrder) {
         return a.displayOrder - b.displayOrder;
+      }
       return a.name.localeCompare(b.name);
     });
   }, [branches]);
 
+  const rows = React.useMemo(() => {
+    return sortedBranches.filter((b) => {
+      const keyword = q.trim().toLowerCase();
+
+      const okQ =
+        !keyword ||
+        b.id.toLowerCase().includes(keyword) ||
+        b.name.toLowerCase().includes(keyword) ||
+        b.address.toLowerCase().includes(keyword) ||
+        branchTypeLabel(b.type).toLowerCase().includes(keyword);
+
+      const okStatus =
+        status === "all" ? true : status === "active" ? b.active : !b.active;
+
+      return okQ && okStatus;
+    });
+  }, [sortedBranches, q, status]);
+
   const placeResults = React.useMemo(() => {
-    const q = mapQuery.trim().toLowerCase();
-    if (!q) return [];
+    const query = mapQuery.trim().toLowerCase();
+    if (!query) return [];
     return MOCK_PLACE_RESULTS.filter(
       (p) =>
-        p.label.toLowerCase().includes(q) || p.address.toLowerCase().includes(q)
+        p.label.toLowerCase().includes(query) ||
+        p.address.toLowerCase().includes(query)
     ).slice(0, 5);
   }, [mapQuery]);
 
   const roundedFieldSX = {
-    "& .MuiOutlinedInput-root": { borderRadius: "14px" },
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "10px",
+    },
+  };
+
+  const normalizeDisplayOrders = (rows: Branch[]) => {
+    const sorted = [...rows].sort((a, b) => a.displayOrder - b.displayOrder);
+    return sorted.map((item, index) => ({
+      ...item,
+      displayOrder: index + 1,
+    }));
   };
 
   const openCreateDrawer = () => {
@@ -346,6 +467,11 @@ export default function AdminLocationsPage() {
     setDrawerMode("status");
   };
 
+  const openDeleteDrawer = (branch: Branch) => {
+    setSelectedBranchId(branch.id);
+    setDrawerMode("delete");
+  };
+
   const closeDrawer = () => {
     setDrawerMode(null);
   };
@@ -368,14 +494,6 @@ export default function AdminLocationsPage() {
     setNextActive(true);
   };
 
-  const normalizeDisplayOrders = (rows: Branch[]) => {
-    const sorted = [...rows].sort((a, b) => a.displayOrder - b.displayOrder);
-    return sorted.map((item, index) => ({
-      ...item,
-      displayOrder: index + 1,
-    }));
-  };
-
   const moveBranch = (id: string, direction: "up" | "down") => {
     const sorted = [...sortedBranches];
     const index = sorted.findIndex((b) => b.id === id);
@@ -386,7 +504,6 @@ export default function AdminLocationsPage() {
 
     const current = sorted[index];
     const target = sorted[swapIndex];
-
     const currentOrder = current.displayOrder;
     current.displayOrder = target.displayOrder;
     target.displayOrder = currentOrder;
@@ -443,6 +560,8 @@ export default function AdminLocationsPage() {
   const createBranch = () => {
     if (!validateBranch()) return;
 
+    const now = getNowString();
+
     const newBranch: Branch = {
       id: makeNextBranchId(branches),
       name: editName.trim(),
@@ -457,6 +576,8 @@ export default function AdminLocationsPage() {
       openTime: editOpenTime,
       closeTime: editCloseTime,
       extraFee: Number(editExtraFee) || 0,
+      createdAt: now,
+      updatedAt: now,
     };
 
     const nextRows = normalizeDisplayOrders([...branches, newBranch]);
@@ -468,6 +589,8 @@ export default function AdminLocationsPage() {
   const saveBranchDetail = () => {
     if (!selectedBranch) return;
     if (!validateBranch()) return;
+
+    const now = getNowString();
 
     const updatedRows = branches.map((b) =>
       b.id === selectedBranch.id
@@ -485,6 +608,7 @@ export default function AdminLocationsPage() {
             openTime: editOpenTime,
             closeTime: editCloseTime,
             extraFee: Number(editExtraFee) || 0,
+            updatedAt: now,
           }
         : b
     );
@@ -511,6 +635,7 @@ export default function AdminLocationsPage() {
           ? {
               ...b,
               active: nextActive,
+              updatedAt: getNowString(),
             }
           : b
       )
@@ -537,6 +662,7 @@ export default function AdminLocationsPage() {
       icon: <CheckCircleRoundedIcon />,
       variant: "contained" as const,
       sx: {
+        textTransform: "none",
         bgcolor: "rgb(22 163 74)",
         boxShadow: "none",
         "&:hover": { bgcolor: "rgb(21 128 61)", boxShadow: "none" },
@@ -548,6 +674,7 @@ export default function AdminLocationsPage() {
       icon: <VisibilityOffRoundedIcon />,
       variant: "outlined" as const,
       sx: {
+        textTransform: "none",
         borderColor: "rgb(203 213 225)",
         color: "rgb(71 85 105)",
         "&:hover": {
@@ -561,78 +688,110 @@ export default function AdminLocationsPage() {
   return (
     <>
       <Box className="grid gap-4">
-        <Box>
-          <Typography
-            variant="h6"
-            className="text-xl font-extrabold text-slate-900"
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={2}
+          className="items-start md:items-center justify-between"
+        >
+          <Box>
+            <Typography
+              variant="h6"
+              className="text-xl font-extrabold text-slate-900"
+            >
+              จุดรับ-ส่ง / สาขา
+            </Typography>
+            <Typography className="text-sm text-slate-600">
+              จัดการข้อมูลสาขา ลำดับการแสดง และสถานะการใช้งาน
+            </Typography>
+          </Box>
+
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.5}
+            className="w-full md:w-auto"
           >
-            จัดการจุดรับ-ส่ง / สาขา
-          </Typography>
-          <Typography className="text-sm text-slate-600">
-            เลือกโหมดใช้งานสาขา และจัดการรายการจุดรับ-ส่งที่ให้ลูกค้าเลือกได้
-          </Typography>
-        </Box>
+            <TextField
+              size="small"
+              label="ค้นหา (รหัส/ชื่อสาขา/ประเภท)"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="w-full sm:w-70"
+              sx={roundedFieldSX}
+            />
+
+            <TextField
+              size="small"
+              select
+              label="สถานะ"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as BranchFilterStatus)}
+              className="w-full sm:w-45"
+              sx={roundedFieldSX}
+            >
+              <MenuItem value="all">ทั้งหมด</MenuItem>
+              <MenuItem value="active">เปิดใช้งาน</MenuItem>
+              <MenuItem value="inactive">ปิดใช้งาน</MenuItem>
+            </TextField>
+
+            <Button
+              variant="contained"
+              size="medium"
+              onClick={openCreateDrawer}
+              disabled={!branchesEnabled}
+              sx={{
+                textTransform: "none",
+                bgcolor: "rgb(15 23 42)",
+                boxShadow: "none",
+                borderRadius: 2.5,
+                "&:hover": {
+                  bgcolor: "rgb(2 6 23)",
+                  boxShadow: "none",
+                },
+              }}
+            >
+              + เพิ่มสาขาใหม่
+            </Button>
+          </Stack>
+        </Stack>
 
         <Card
           elevation={0}
           className="rounded-2xl! border border-slate-200 bg-white"
         >
-          <CardContent className="p-5">
+          <CardContent className="p-4!">
             <Stack
               direction={{ xs: "column", sm: "row" }}
               spacing={2}
               className="items-start sm:items-center justify-between"
             >
               <Stack direction="row" spacing={1.25} className="items-center">
-                <Box className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-slate-50">
-                  <PlaceRoundedIcon fontSize="small" />
+                <Box className="grid h-12 w-12 place-items-center rounded-lg border border-slate-200">
+                  <PlaceRoundedIcon fontSize="medium" />
                 </Box>
 
                 <Box>
                   <Typography className="text-sm font-bold text-slate-900">
                     โหมดสาขา: {branchesEnabled ? "เปิด" : "ปิด"} • ทั้งหมด{" "}
-                    {branches.length} • ใช้งาน {activeCount}
+                    {branches.length} รายการ • ใช้งาน {activeCount} รายการ
                   </Typography>
                   <Typography className="mt-1 text-xs text-slate-500">
-                    ปิด = ลูกค้าพิมพ์สถานที่เอง / เปิด = ลูกค้าเลือกจาก dropdown
+                    ปิด = ลูกค้าพิมพ์เอง / เปิด = ลูกค้าเลือกจากรายการสาขา
                   </Typography>
                 </Box>
               </Stack>
 
-              <Stack
-                direction="row"
-                spacing={1}
-                className="items-center flex-wrap"
-              >
+              <Stack direction="row" spacing={1} className="items-center">
                 <Tooltip title="เปิด/ปิดโหมดสาขา">
                   <Stack direction="row" spacing={1} className="items-center">
                     <Typography className="text-xs text-slate-600">
                       Enterprise Mode
                     </Typography>
-                    <Switch
+                    <IOSSwitch
                       checked={branchesEnabled}
                       onChange={(e) => setBranchesEnabled(e.target.checked)}
-                      size="small"
                     />
                   </Stack>
                 </Tooltip>
-
-                <Button
-                  onClick={openCreateDrawer}
-                  variant="contained"
-                  size="small"
-                  startIcon={<AddRoundedIcon />}
-                  sx={{
-                    textTransform: "none",
-                    bgcolor: "rgb(15 23 42)",
-                    boxShadow: "none",
-                    "&:hover": { bgcolor: "rgb(2 6 23)", boxShadow: "none" },
-                    borderRadius: 2,
-                  }}
-                  disabled={!branchesEnabled}
-                >
-                  เพิ่มสาขา
-                </Button>
               </Stack>
             </Stack>
           </CardContent>
@@ -644,228 +803,259 @@ export default function AdminLocationsPage() {
             className="rounded-2xl! border border-slate-200 bg-white"
           >
             <CardContent className="p-0">
-              <Box className="px-5 py-4 flex items-center justify-between">
-                <Typography className="text-sm font-bold text-slate-900">
-                  รายการสาขา / จุดรับ-ส่ง
-                </Typography>
-                <Typography className="text-xs text-slate-500">
-                  {sortedBranches.length} รายการ
-                </Typography>
-              </Box>
+              <Box className="grid">
+                {rows.map((b, idx) => {
+                  const mapsUrl = buildGoogleMapsUrl(b.lat, b.lng);
 
-              <Divider className="border-slate-200!" />
-
-              {sortedBranches.map((b, idx) => {
-                const mapsUrl = buildGoogleMapsUrl(b.lat, b.lng);
-
-                return (
-                  <Box
-                    key={b.id}
-                    className="hover:bg-slate-50 transition-colors"
-                  >
-                    <Box className="p-5">
-                      <Stack
-                        direction={{ xs: "column", md: "row" }}
-                        spacing={2}
-                        className="items-start justify-between"
-                        sx={{ alignItems: { xs: "flex-start", md: "stretch" } }}
-                      >
+                  return (
+                    <Box key={b.id}>
+                      <Box className="p-4 sm:p-5">
                         <Stack
-                          direction="row"
-                          spacing={1.5}
-                          className="items-start min-w-0 flex-1 w-full"
+                          direction={{ xs: "column", md: "row" }}
+                          spacing={2}
+                          className="items-start justify-between"
                         >
-                          <Box className="grid h-16 w-16 place-items-center rounded-2xl border border-slate-200 bg-slate-50 shrink-0">
-                            <PlaceRoundedIcon fontSize="small" />
-                          </Box>
-
-                          <Box className="min-w-0 flex-1">
-                            <Stack
-                              direction="row"
-                              spacing={1}
-                              className="items-center flex-wrap"
-                            >
-                              <Typography className="text-sm font-extrabold text-slate-900 tracking-wide">
-                                {b.id}
-                              </Typography>
-                              <BranchStatusChip active={b.active} />
-                              <BranchTypeChip type={b.type} />
-                              <Chip
-                                size="small"
-                                label={`ลำดับ ${b.displayOrder}`}
-                                variant="outlined"
-                                sx={{ height: 22, fontSize: 11 }}
-                              />
-                            </Stack>
-
-                            <Typography className="mt-1 text-lg font-bold text-slate-800">
-                              {b.name}
-                            </Typography>
-
-                            <Divider className="my-2 border-slate-200!" />
-
-                            <Typography className="text-xs text-slate-500">
-                              ที่อยู่:{" "}
-                              <span className="font-medium text-slate-700">
-                                {b.address || "ยังไม่ได้ระบุ"}
-                              </span>
-                            </Typography>
-
-                            <Typography className="mt-1 text-xs text-slate-500">
-                              เวลาเปิด-ปิด:{" "}
-                              <span className="font-medium text-slate-700">
-                                {b.openTime} - {b.closeTime}
-                              </span>
-                            </Typography>
-
-                            <Typography className="mt-1 text-xs text-slate-500">
-                              บริการ:{" "}
-                              <span className="font-medium text-slate-700">
-                                {b.pickupAvailable ? "รับรถได้" : "รับรถไม่ได้"}{" "}
-                                •{" "}
-                                {b.returnAvailable ? "คืนรถได้" : "คืนรถไม่ได้"}
-                              </span>
-                            </Typography>
-
-                            <Typography className="mt-1 text-xs text-slate-500">
-                              ค่าบริการเพิ่ม:{" "}
-                              <span className="font-medium text-slate-700">
-                                {b.extraFee > 0
-                                  ? formatTHB(b.extraFee)
-                                  : "ไม่มี"}
-                              </span>
-                            </Typography>
-
-                            <Typography className="mt-1 text-xs text-slate-500">
-                              พิกัด:{" "}
-                              <span className="font-medium text-slate-700">
-                                {b.lat && b.lng
-                                  ? `${b.lat}, ${b.lng}`
-                                  : "ยังไม่ได้ระบุ"}
-                              </span>
-                            </Typography>
-
-                            {mapsUrl ? (
-                              <Box className="mt-2">
-                                <Button
-                                  component="a"
-                                  href={mapsUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  size="small"
-                                  variant="outlined"
-                                  startIcon={<OpenInNewRoundedIcon />}
-                                  sx={{
-                                    textTransform: "none",
-                                    borderColor: "rgb(226 232 240)",
-                                    borderRadius: 2,
-                                  }}
-                                >
-                                  เปิดแผนที่
-                                </Button>
-                              </Box>
-                            ) : null}
-                          </Box>
-                        </Stack>
-
-                        <Stack
-                          spacing={1.5}
-                          className="w-full md:w-auto"
-                          sx={{
-                            minWidth: { md: 260 },
-                            alignSelf: { xs: "stretch", md: "stretch" },
-                          }}
-                        >
-                          <Box className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                            <Typography className="text-xs text-slate-500">
-                              สถานะ
-                            </Typography>
-                            <Typography className="text-sm font-semibold text-slate-900">
-                              {b.active ? "เปิดใช้งาน" : "ปิดใช้งาน"}
-                            </Typography>
-                          </Box>
-
                           <Stack
-                            direction="row"
-                            spacing={1}
-                            className="justify-end flex-wrap"
+                            direction={{ xs: "column", md: "row" }}
+                            spacing={2}
+                            className="min-w-0 flex-1 w-full"
                           >
-                            <Tooltip title="เลื่อนขึ้น">
-                              <span>
-                                <IconButton
-                                  onClick={() => moveBranch(b.id, "up")}
-                                  disabled={idx === 0}
-                                  sx={{ borderRadius: 2 }}
-                                >
-                                  <NorthRoundedIcon />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-
-                            <Tooltip title="เลื่อนลง">
-                              <span>
-                                <IconButton
-                                  onClick={() => moveBranch(b.id, "down")}
-                                  disabled={idx === sortedBranches.length - 1}
-                                  sx={{ borderRadius: 2 }}
-                                >
-                                  <SouthRoundedIcon />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-
-                            <Button
-                              size="medium"
-                              variant="outlined"
-                              onClick={() => openDetailDrawer(b)}
+                            <Box
+                              className="shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
                               sx={{
-                                textTransform: "none",
-                                borderColor: "rgb(226 232 240)",
-                                borderRadius: 2.5,
-                              }}
-                            >
-                              แก้ไข
-                            </Button>
-
-                            <Button
-                              size="medium"
-                              variant="contained"
-                              onClick={() => openStatusDrawer(b)}
-                              sx={{
-                                textTransform: "none",
-                                bgcolor: "rgb(15 23 42)",
-                                boxShadow: "none",
-                                borderRadius: 2.5,
-                                "&:hover": {
-                                  bgcolor: "rgb(2 6 23)",
-                                  boxShadow: "none",
+                                width: {
+                                  xs: "100%",
+                                  md: 220,
+                                  lg: 260,
+                                },
+                                height: {
+                                  xs: 180,
+                                  sm: 220,
+                                  md: 150,
+                                  lg: 170,
                                 },
                               }}
                             >
-                              จัดการสถานะ
-                            </Button>
+                              <Box className="grid h-full w-full place-items-center bg-linear-to-br from-slate-100 to-slate-200 text-slate-500">
+                                {b.type === "airport" ? (
+                                  <LocalShippingRoundedIcon
+                                    sx={{ fontSize: 42 }}
+                                  />
+                                ) : (
+                                  <PlaceRoundedIcon sx={{ fontSize: 42 }} />
+                                )}
+                              </Box>
+                            </Box>
+
+                            <Box className="min-w-0 flex-1">
+                              <Stack
+                                direction="row"
+                                spacing={1.5}
+                                className="items-center flex-wrap"
+                              >
+                                <Typography className="text-sm font-extrabold text-slate-900 tracking-wide">
+                                  {b.id}
+                                </Typography>
+
+                                <BranchStatusChip active={b.active} />
+                                <BranchTypeChip type={b.type} />
+
+                                <Chip
+                                  size="medium"
+                                  label={`ลำดับ ${b.displayOrder}`}
+                                  variant="outlined"
+                                />
+                              </Stack>
+
+                              <Typography className="mt-1 text-lg font-bold text-slate-800">
+                                {b.name}
+                              </Typography>
+
+                              <Divider className="my-2! border-slate-200!" />
+
+                              <Typography className="text-xs text-slate-500">
+                                ที่อยู่:{" "}
+                                <span className="font-medium text-slate-700">
+                                  {b.address || "ยังไม่ได้ระบุ"}
+                                </span>
+                              </Typography>
+
+                              <Typography className="mt-1 text-xs text-slate-500">
+                                เวลาเปิด-ปิด:{" "}
+                                <span className="font-medium text-slate-700">
+                                  {b.openTime} - {b.closeTime}
+                                </span>
+                              </Typography>
+
+                              <Typography className="mt-1 text-xs text-slate-500">
+                                บริการ:{" "}
+                                <span className="font-medium text-slate-700">
+                                  {b.pickupAvailable
+                                    ? "รับรถได้"
+                                    : "รับรถไม่ได้"}
+                                  {" • "}
+                                  {b.returnAvailable
+                                    ? "คืนรถได้"
+                                    : "คืนรถไม่ได้"}
+                                </span>
+                              </Typography>
+
+                              <Typography className="mt-1 text-xs text-slate-500">
+                                พิกัด:{" "}
+                                <span className="font-medium text-slate-700">
+                                  {b.lat && b.lng
+                                    ? `${b.lat}, ${b.lng}`
+                                    : "ยังไม่ได้ระบุ"}
+                                </span>
+                              </Typography>
+
+                              <Typography className="mt-1 text-xs text-slate-500">
+                                สร้างเมื่อ{" "}
+                                <span className="font-medium text-slate-700">
+                                  {b.createdAt ?? "-"}
+                                </span>
+                                {" • "}
+                                อัปเดตล่าสุด{" "}
+                                <span className="font-medium text-slate-700">
+                                  {b.updatedAt ?? "-"}
+                                </span>
+                              </Typography>
+
+                              {mapsUrl ? (
+                                <Box className="mt-2">
+                                  <Button
+                                    component="a"
+                                    href={mapsUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    size="medium"
+                                    variant="outlined"
+                                    startIcon={<OpenInNewRoundedIcon />}
+                                    sx={{
+                                      textTransform: "none",
+                                      borderColor: "rgb(226 232 240)",
+                                      borderRadius: 2,
+                                    }}
+                                  >
+                                    เปิดแผนที่
+                                  </Button>
+                                </Box>
+                              ) : null}
+                            </Box>
+                          </Stack>
+
+                          <Stack
+                            spacing={1.5}
+                            className="w-full md:w-auto"
+                            sx={{
+                              minWidth: { md: 220 },
+                            }}
+                          >
+                            <Box className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                              <Typography className="text-xs text-slate-500">
+                                ค่าบริการเพิ่ม
+                              </Typography>
+                              <Typography className="text-sm font-semibold text-slate-900">
+                                {b.extraFee > 0
+                                  ? formatTHB(b.extraFee)
+                                  : "ไม่มี"}
+                              </Typography>
+                            </Box>
+
+                            <Stack
+                              direction={{ xs: "column", sm: "row" }}
+                              spacing={1}
+                              className="justify-end flex-wrap"
+                            >
+                              <Tooltip title="เลื่อนขึ้น">
+                                <span>
+                                  <IconButton
+                                    onClick={() => moveBranch(b.id, "up")}
+                                    disabled={idx === 0}
+                                    sx={{ borderRadius: 2 }}
+                                  >
+                                    <NorthRoundedIcon />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+
+                              <Tooltip title="เลื่อนลง">
+                                <span>
+                                  <IconButton
+                                    onClick={() => moveBranch(b.id, "down")}
+                                    disabled={idx === rows.length - 1}
+                                    sx={{ borderRadius: 2 }}
+                                  >
+                                    <SouthRoundedIcon />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+
+                              <Button
+                                size="medium"
+                                variant="outlined"
+                                color="error"
+                                onClick={() => openDeleteDrawer(b)}
+                                className="rounded-lg!"
+                                startIcon={<DeleteOutlineRoundedIcon />}
+                                sx={{
+                                  textTransform: "none",
+                                  borderRadius: 2.5,
+                                }}
+                              >
+                                ลบสาขา
+                              </Button>
+
+                              <Button
+                                size="medium"
+                                variant="outlined"
+                                onClick={() => openDetailDrawer(b)}
+                                className="rounded-lg!"
+                                sx={{
+                                  textTransform: "none",
+                                  borderColor: "rgb(226 232 240)",
+                                }}
+                              >
+                                แก้ไขรายละเอียด
+                              </Button>
+
+                              <Button
+                                size="medium"
+                                variant="contained"
+                                onClick={() => openStatusDrawer(b)}
+                                className="rounded-lg!"
+                                sx={{
+                                  textTransform: "none",
+                                  bgcolor: "rgb(15 23 42)",
+                                  boxShadow: "none",
+                                  "&:hover": {
+                                    bgcolor: "rgb(2 6 23)",
+                                    boxShadow: "none",
+                                  },
+                                }}
+                              >
+                                เปลี่ยนสถานะ
+                              </Button>
+                            </Stack>
                           </Stack>
                         </Stack>
-                      </Stack>
+                      </Box>
+
+                      {idx !== rows.length - 1 ? (
+                        <Divider className="border-slate-200!" />
+                      ) : null}
                     </Box>
+                  );
+                })}
 
-                    {idx !== sortedBranches.length - 1 && (
-                      <Divider className="border-slate-200!" />
-                    )}
+                {!rows.length ? (
+                  <Box className="p-8 text-center">
+                    <Typography className="text-sm text-slate-600">
+                      ไม่พบรายการที่ตรงกับเงื่อนไข
+                    </Typography>
                   </Box>
-                );
-              })}
-
-              {sortedBranches.length === 0 ? (
-                <Box className="px-5 py-10 text-center">
-                  <Typography className="text-sm font-semibold text-slate-900">
-                    ยังไม่มีสาขา
-                  </Typography>
-                  <Typography className="mt-1 text-xs text-slate-500">
-                    กด “เพิ่มสาขา” เพื่อเริ่มต้น
-                  </Typography>
-                </Box>
-              ) : null}
+                ) : null}
+              </Box>
             </CardContent>
           </Card>
         ) : (
@@ -884,21 +1074,6 @@ export default function AdminLocationsPage() {
             </CardContent>
           </Card>
         )}
-
-        <Card
-          elevation={0}
-          className="rounded-2xl! border border-slate-200 bg-white"
-        >
-          <CardContent className="p-5">
-            <Typography className="text-sm font-bold text-slate-900">
-              แนะนำการใช้งาน
-            </Typography>
-            <Typography className="mt-1 text-xs text-slate-500">
-              ถ้ามีหลายจุดรับ-ส่ง เช่น สนามบินหรือหลายสาขา ให้เปิด Enterprise
-              Mode และเปิด Active เฉพาะจุดที่พร้อมบริการ
-            </Typography>
-          </CardContent>
-        </Card>
       </Box>
 
       <Drawer
@@ -912,491 +1087,660 @@ export default function AdminLocationsPage() {
         PaperProps={{
           sx: {
             width: isMobile ? "100%" : 700,
-            height: isMobile ? "80%" : "100%",
+            height: isMobile ? "88%" : "100%",
+            borderTopLeftRadius: isMobile ? 18 : 0,
+            borderTopRightRadius: isMobile ? 18 : 0,
+            overflow: "hidden",
+            bgcolor: "rgb(248 250 252)",
           },
         }}
       >
-        <Box className="p-4">
-          <Stack
-            direction="row"
-            spacing={1.25}
-            className="items-center justify-between"
+        <Box className="flex h-full flex-col">
+          {/* Topbar */}
+          <Box
+            sx={{
+              position: "sticky",
+              top: 0,
+              zIndex: 20,
+              borderBottom: "1px solid rgb(226 232 240)",
+              backgroundColor: "rgba(255,255,255,0.92)",
+              backdropFilter: "blur(10px)",
+            }}
           >
-            <Stack
-              direction="row"
-              spacing={1.25}
-              className="items-center min-w-0"
-            >
-              <Box className="min-w-0">
-                <Typography className="text-sm font-black text-slate-900">
-                  {drawerMode === "create"
-                    ? "เพิ่มสาขาใหม่"
-                    : drawerMode === "detail"
-                    ? "แก้ไขข้อมูลสาขา"
-                    : "จัดการสถานะสาขา"}
-                </Typography>
-                <Typography className="text-xs text-slate-500">
-                  {drawerMode === "create"
-                    ? "กรอกข้อมูลสาขาใหม่"
-                    : selectedBranch
-                    ? `${selectedBranch.id} • ${selectedBranch.name}`
-                    : "-"}
-                </Typography>
+            {isMobile ? (
+              <Box className="flex justify-center pt-2">
+                <Box className="h-1.5 w-12 rounded-full bg-slate-300" />
               </Box>
-            </Stack>
+            ) : null}
 
-            <IconButton onClick={closeDrawer}>
-              <CloseRoundedIcon />
-            </IconButton>
-          </Stack>
-
-          <Divider className="my-4! border-slate-200!" />
-
-          {drawerMode === "create" ||
-          (drawerMode === "detail" && selectedBranch) ? (
-            <Stack spacing={2}>
-              <Box className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                <Box
-                  className="relative bg-linear-to-br from-slate-900 to-slate-700"
-                  sx={{ minHeight: 220 }}
+            <Box className="px-4 py-3">
+              <Stack
+                direction="row"
+                spacing={1.5}
+                className="items-center justify-between"
+              >
+                <Stack
+                  direction="row"
+                  spacing={1.25}
+                  className="items-center min-w-0"
                 >
-                  <Box className="grid h-55 w-full place-items-center text-slate-300">
-                    <PlaceRoundedIcon sx={{ fontSize: 56 }} />
+                  <Box
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-slate-200"
+                    sx={{
+                      bgcolor:
+                        drawerMode === "create"
+                          ? "rgb(239 246 255)"
+                          : drawerMode === "detail"
+                          ? "rgb(241 245 249)"
+                          : drawerMode === "status"
+                          ? "rgb(254 249 195)"
+                          : "rgb(254 242 242)",
+                      color:
+                        drawerMode === "create"
+                          ? "rgb(3 105 161)"
+                          : drawerMode === "detail"
+                          ? "rgb(15 23 42)"
+                          : drawerMode === "status"
+                          ? "rgb(146 64 14)"
+                          : "rgb(185 28 28)",
+                    }}
+                  >
+                    {drawerMode === "create" ? (
+                      <PlaceRoundedIcon sx={{ fontSize: 20 }} />
+                    ) : drawerMode === "detail" ? (
+                      <PlaceRoundedIcon sx={{ fontSize: 20 }} />
+                    ) : drawerMode === "status" ? (
+                      <CheckCircleRoundedIcon sx={{ fontSize: 20 }} />
+                    ) : (
+                      <DeleteOutlineRoundedIcon sx={{ fontSize: 20 }} />
+                    )}
                   </Box>
 
-                  <Box
-                    className="absolute inset-0"
-                    sx={{
-                      background:
-                        "linear-gradient(to bottom, rgba(15,23,42,0.82), rgba(15,23,42,0.18))",
-                    }}
-                  />
-
-                  <Box className="absolute inset-x-0 top-0 p-4 text-white">
-                    <Typography className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
+                  <Box className="min-w-0">
+                    <Typography className="truncate text-sm font-black text-slate-900">
                       {drawerMode === "create"
-                        ? "New Branch"
-                        : "Branch Overview"}
+                        ? "เพิ่มสาขาใหม่"
+                        : drawerMode === "detail"
+                        ? "แก้ไขข้อมูลสาขา"
+                        : drawerMode === "status"
+                        ? "เปลี่ยนสถานะสาขา"
+                        : "ยืนยันการลบสาขา"}
                     </Typography>
-                    <Typography className="mt-2 text-xl font-extrabold">
-                      {editName || "สาขาใหม่"}
+
+                    <Typography className="truncate text-xs text-slate-500">
+                      {drawerMode === "create"
+                        ? "กรอกข้อมูลสาขาใหม่"
+                        : drawerMode === "delete"
+                        ? "ตรวจสอบข้อมูลก่อนลบ"
+                        : selectedBranch
+                        ? `${selectedBranch.id} • ${selectedBranch.name}`
+                        : "-"}
                     </Typography>
-                    <Typography className="mt-2 text-sm text-slate-200">
-                      {branchTypeLabel(editType)} • ลำดับ {editDisplayOrder}
-                    </Typography>
-                    <Typography className="mt-2 text-sm text-slate-300">
-                      {editAddress || "ยังไม่ได้ระบุที่อยู่"}
-                    </Typography>
+                  </Box>
+                </Stack>
+
+                <IconButton
+                  onClick={closeDrawer}
+                  sx={{
+                    border: "1px solid rgb(226 232 240)",
+                    bgcolor: "white",
+                    "&:hover": {
+                      bgcolor: "rgb(248 250 252)",
+                    },
+                  }}
+                >
+                  <CloseRoundedIcon />
+                </IconButton>
+              </Stack>
+            </Box>
+          </Box>
+
+          {/* Content */}
+          <Box className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+            {(drawerMode === "create" ||
+              (drawerMode === "detail" && selectedBranch)) && (
+              <Stack spacing={2}>
+                <Box className="overflow-hidden rounded-2xl border border-slate-200 bg-white mb-1">
+                  <Box
+                    className="relative bg-linear-to-br from-slate-900 to-slate-700"
+                    sx={{ minHeight: 220 }}
+                  >
+                    <Box className="grid h-55 w-full place-items-center text-slate-300">
+                      <PlaceRoundedIcon sx={{ fontSize: 56 }} />
+                    </Box>
+
+                    <Box
+                      className="absolute inset-0"
+                      sx={{
+                        background:
+                          "linear-gradient(to bottom, rgba(15,23,42,0.82), rgba(15,23,42,0.18))",
+                      }}
+                    />
+
+                    <Box className="absolute inset-x-0 top-0 p-4 text-white">
+                      <Typography className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
+                        {drawerMode === "create"
+                          ? "New Branch"
+                          : "Branch Overview"}
+                      </Typography>
+
+                      <Typography className="mt-2 text-xl font-extrabold">
+                        {editName || "สาขาใหม่"}
+                      </Typography>
+
+                      <Typography className="mt-2 text-sm text-slate-200">
+                        {branchTypeLabel(editType)} • ลำดับ {editDisplayOrder}
+                      </Typography>
+
+                      <Typography className="mt-2 text-sm text-slate-300">
+                        {editAddress || "ยังไม่ได้ระบุที่อยู่"}
+                      </Typography>
+                    </Box>
                   </Box>
                 </Box>
-              </Box>
 
-              <Box className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <SectionCard title="ข้อมูลหลัก">
-                  <TextField
-                    fullWidth
-                    label="ชื่อสาขา"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    sx={roundedFieldSX}
-                  />
-
-                  <TextField
-                    fullWidth
-                    label="ที่อยู่ / คำอธิบาย"
-                    value={editAddress}
-                    onChange={(e) => setEditAddress(e.target.value)}
-                    sx={roundedFieldSX}
-                  />
-
-                  <TextField
-                    select
-                    fullWidth
-                    label="ประเภทสาขา"
-                    value={editType}
-                    onChange={(e) => setEditType(e.target.value as BranchType)}
-                    sx={roundedFieldSX}
-                  >
-                    <MenuItem value="airport">สนามบิน</MenuItem>
-                    <MenuItem value="storefront">หน้าร้าน</MenuItem>
-                    <MenuItem value="meeting_point">จุดนัดรับ</MenuItem>
-                  </TextField>
-                </SectionCard>
-
-                <SectionCard title="ลำดับและสถานะ">
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="ลำดับการแสดง"
-                    value={editDisplayOrder}
-                    onChange={(e) =>
-                      setEditDisplayOrder(Number(e.target.value))
-                    }
-                    inputProps={{ min: 1 }}
-                    sx={roundedFieldSX}
-                  />
-
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    className="items-center justify-between"
-                  >
-                    <Typography className="text-sm font-medium text-slate-700">
-                      เปิดใช้งาน
-                    </Typography>
-                    <Switch
-                      checked={editActive}
-                      onChange={(e) => setEditActive(e.target.checked)}
-                      size="small"
+                <Box className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <SectionCard title="ข้อมูลหลัก">
+                    <TextField
+                      fullWidth
+                      label="ชื่อสาขา"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      sx={roundedFieldSX}
                     />
-                  </Stack>
 
-                  <InfoRow
-                    label="สถานะ"
-                    value={<BranchStatusChip active={editActive} />}
-                  />
-                </SectionCard>
-
-                <SectionCard title="การให้บริการ">
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    className="items-center justify-between"
-                  >
-                    <Typography className="text-sm font-medium text-slate-700">
-                      รับรถได้
-                    </Typography>
-                    <Switch
-                      checked={editPickupAvailable}
-                      onChange={(e) => setEditPickupAvailable(e.target.checked)}
-                      size="small"
+                    <TextField
+                      fullWidth
+                      label="ที่อยู่ / คำอธิบาย"
+                      value={editAddress}
+                      onChange={(e) => setEditAddress(e.target.value)}
+                      sx={roundedFieldSX}
                     />
-                  </Stack>
 
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    className="items-center justify-between"
-                  >
-                    <Typography className="text-sm font-medium text-slate-700">
-                      คืนรถได้
-                    </Typography>
-                    <Switch
-                      checked={editReturnAvailable}
-                      onChange={(e) => setEditReturnAvailable(e.target.checked)}
-                      size="small"
-                    />
-                  </Stack>
-
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="ค่าบริการเพิ่ม (บาท)"
-                    value={editExtraFee}
-                    onChange={(e) => setEditExtraFee(Number(e.target.value))}
-                    inputProps={{ min: 0 }}
-                    sx={roundedFieldSX}
-                  />
-                </SectionCard>
-
-                <SectionCard title="เวลาเปิด-ปิด">
-                  <TextField
-                    fullWidth
-                    type="time"
-                    label="เวลาเปิด"
-                    value={editOpenTime}
-                    onChange={(e) => setEditOpenTime(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    sx={roundedFieldSX}
-                  />
-
-                  <TextField
-                    fullWidth
-                    type="time"
-                    label="เวลาปิด"
-                    value={editCloseTime}
-                    onChange={(e) => setEditCloseTime(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    sx={roundedFieldSX}
-                  />
-                </SectionCard>
-
-                <SectionCard title="ตำแหน่งบนแผนที่">
-                  <TextField
-                    fullWidth
-                    label="ค้นหาสถานที่ (mock)"
-                    value={mapQuery}
-                    onChange={(e) => setMapQuery(e.target.value)}
-                    placeholder="เช่น ดอนเมือง / รัชดา / สุพรรณบุรี"
-                    sx={roundedFieldSX}
-                    InputProps={{
-                      startAdornment: (
-                        <SearchRoundedIcon
-                          sx={{ mr: 1, color: "rgb(100 116 139)" }}
-                        />
-                      ),
-                    }}
-                  />
-
-                  {placeResults.length ? (
-                    <Box className="rounded-2xl border border-slate-200 bg-slate-50 p-2">
-                      <Stack spacing={1}>
-                        {placeResults.map((place) => (
-                          <Button
-                            key={`${place.label}-${place.lat}-${place.lng}`}
-                            variant="text"
-                            onClick={() => applyPlaceResult(place)}
-                            sx={{
-                              justifyContent: "flex-start",
-                              textTransform: "none",
-                              borderRadius: 2,
-                              color: "rgb(15 23 42)",
-                            }}
-                            startIcon={<RoomRoundedIcon />}
-                          >
-                            <Box className="text-left">
-                              <Typography className="text-sm font-semibold text-slate-900">
-                                {place.label}
-                              </Typography>
-                              <Typography className="text-xs text-slate-500">
-                                {place.address}
-                              </Typography>
-                            </Box>
-                          </Button>
-                        ))}
-                      </Stack>
-                    </Box>
-                  ) : null}
-
-                  <TextField
-                    fullWidth
-                    label="Latitude"
-                    value={editLat}
-                    onChange={(e) => setEditLat(e.target.value)}
-                    placeholder="เช่น 13.7563"
-                    sx={roundedFieldSX}
-                  />
-
-                  <TextField
-                    fullWidth
-                    label="Longitude"
-                    value={editLng}
-                    onChange={(e) => setEditLng(e.target.value)}
-                    placeholder="เช่น 100.5018"
-                    sx={roundedFieldSX}
-                  />
-
-                  {buildGoogleMapsUrl(editLat, editLng) ? (
-                    <Button
-                      component="a"
-                      href={buildGoogleMapsUrl(editLat, editLng)}
-                      target="_blank"
-                      rel="noreferrer"
-                      variant="outlined"
-                      startIcon={<OpenInNewRoundedIcon />}
-                      sx={{
-                        textTransform: "none",
-                        borderColor: "rgb(226 232 240)",
-                        borderRadius: 2.5,
-                      }}
+                    <TextField
+                      select
+                      fullWidth
+                      label="ประเภทสาขา"
+                      value={editType}
+                      onChange={(e) =>
+                        setEditType(e.target.value as BranchType)
+                      }
+                      sx={roundedFieldSX}
                     >
-                      เปิดดูบน Google Maps
-                    </Button>
-                  ) : null}
-                </SectionCard>
+                      <MenuItem value="airport">สนามบิน</MenuItem>
+                      <MenuItem value="storefront">หน้าร้าน</MenuItem>
+                      <MenuItem value="meeting_point">จุดนัดรับ</MenuItem>
+                    </TextField>
+                  </SectionCard>
 
-                <SectionCard title="สรุป">
-                  <InfoRow
-                    label="ประเภท"
-                    value={<BranchTypeChip type={editType} />}
-                  />
-                  <InfoRow label="ลำดับ" value={editDisplayOrder} />
-                  <InfoRow
-                    label="การให้บริการ"
-                    value={`${
-                      editPickupAvailable ? "รับรถได้" : "รับรถไม่ได้"
-                    } • ${editReturnAvailable ? "คืนรถได้" : "คืนรถไม่ได้"}`}
-                  />
-                  <InfoRow
-                    label="เวลาเปิด-ปิด"
-                    value={`${editOpenTime} - ${editCloseTime}`}
-                  />
-                  <InfoRow
-                    label="ค่าบริการเพิ่ม"
-                    value={editExtraFee > 0 ? formatTHB(editExtraFee) : "ไม่มี"}
-                  />
-                  <InfoRow
-                    label="พิกัด"
-                    value={
-                      editLat && editLng
-                        ? `${editLat}, ${editLng}`
-                        : "ยังไม่ได้ระบุ"
-                    }
-                  />
-                </SectionCard>
-              </Box>
+                  <SectionCard title="ลำดับและสถานะ">
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="ลำดับการแสดง"
+                      value={editDisplayOrder}
+                      onChange={(e) =>
+                        setEditDisplayOrder(Number(e.target.value))
+                      }
+                      inputProps={{ min: 1 }}
+                      sx={roundedFieldSX}
+                    />
 
-              {drawerMode === "detail" && selectedBranch ? (
-                <SectionCard title="จัดการรายการ">
-                  <Stack direction="row" spacing={1}>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      startIcon={<DeleteOutlineRoundedIcon />}
-                      onClick={() => {
-                        removeBranch(selectedBranch.id);
-                        closeDrawer();
-                      }}
-                      sx={{
-                        textTransform: "none",
-                        borderRadius: 2.5,
-                      }}
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      className="items-center justify-between"
                     >
-                      ลบสาขานี้
-                    </Button>
-                  </Stack>
-                </SectionCard>
-              ) : null}
+                      <Typography className="text-sm font-medium text-slate-700">
+                        เปิดใช้งาน
+                      </Typography>
+                      <IOSSwitch
+                        checked={editActive}
+                        onChange={(e) => setEditActive(e.target.checked)}
+                      />
+                    </Stack>
 
-              <Stack direction="row" spacing={1} className="pt-0.5">
-                <Button
-                  fullWidth
-                  size="medium"
-                  variant="outlined"
-                  onClick={closeDrawer}
-                  sx={{
-                    textTransform: "none",
-                    borderColor: "rgb(226 232 240)",
-                    color: "rgb(15 23 42)",
-                    borderRadius: 2.5,
-                  }}
-                >
-                  ปิดหน้าต่าง
-                </Button>
-                <Button
-                  fullWidth
-                  size="medium"
-                  variant="contained"
-                  onClick={saveBranchForm}
-                  sx={{
-                    textTransform: "none",
-                    bgcolor: "rgb(15 23 42)",
-                    boxShadow: "none",
-                    borderRadius: 2.5,
-                    "&:hover": {
-                      bgcolor: "rgb(2 6 23)",
-                      boxShadow: "none",
-                    },
-                  }}
-                >
-                  {drawerMode === "create" ? "เพิ่มสาขา" : "บันทึกข้อมูล"}
-                </Button>
-              </Stack>
-            </Stack>
-          ) : null}
+                    <InfoRow
+                      label="สถานะ"
+                      value={<BranchStatusChip active={editActive} />}
+                    />
+                  </SectionCard>
 
-          {drawerMode === "status" && selectedBranch ? (
-            <Stack spacing={2}>
-              <Box className="rounded-2xl border border-slate-200 bg-white p-4">
-                <Stack direction="row" spacing={1} className="items-center">
-                  <Typography className="text-sm font-bold text-slate-900">
-                    สถานะปัจจุบัน
-                  </Typography>
-                  <BranchStatusChip active={selectedBranch.active} />
-                </Stack>
-              </Box>
+                  <SectionCard title="การให้บริการ">
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      className="items-center justify-between"
+                    >
+                      <Typography className="text-sm font-medium text-slate-700">
+                        รับรถได้
+                      </Typography>
+                      <IOSSwitch
+                        checked={editPickupAvailable}
+                        onChange={(e) =>
+                          setEditPickupAvailable(e.target.checked)
+                        }
+                      />
+                    </Stack>
 
-              <Box className="rounded-2xl border border-slate-200 bg-white p-4">
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1}
-                  className="items-start sm:items-center justify-between"
-                >
-                  <Typography className="text-sm font-bold text-slate-900">
-                    เลือกสถานะใหม่
-                  </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      className="items-center justify-between"
+                    >
+                      <Typography className="text-sm font-medium text-slate-700">
+                        คืนรถได้
+                      </Typography>
+                      <IOSSwitch
+                        checked={editReturnAvailable}
+                        onChange={(e) =>
+                          setEditReturnAvailable(e.target.checked)
+                        }
+                      />
+                    </Stack>
 
-                  <Stack direction="row" spacing={1} className="items-center">
-                    <Typography className="text-xs text-slate-500">
-                      จะบันทึกเป็น
-                    </Typography>
-                    <BranchStatusChip active={nextActive} />
-                  </Stack>
-                </Stack>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="ค่าบริการเพิ่ม (บาท)"
+                      value={editExtraFee}
+                      onChange={(e) => setEditExtraFee(Number(e.target.value))}
+                      inputProps={{ min: 0 }}
+                      sx={roundedFieldSX}
+                    />
+                  </SectionCard>
 
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1.2}
-                  className="mt-4"
-                >
-                  {quickActions.map((action) => {
-                    const isActive = nextActive === action.value;
+                  <SectionCard title="เวลาเปิด-ปิด">
+                    <TextField
+                      fullWidth
+                      type="time"
+                      label="เวลาเปิด"
+                      value={editOpenTime}
+                      onChange={(e) => setEditOpenTime(e.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                      sx={roundedFieldSX}
+                    />
 
-                    return (
+                    <TextField
+                      fullWidth
+                      type="time"
+                      label="เวลาปิด"
+                      value={editCloseTime}
+                      onChange={(e) => setEditCloseTime(e.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                      sx={roundedFieldSX}
+                    />
+                  </SectionCard>
+
+                  <SectionCard title="ตำแหน่งบนแผนที่">
+                    <TextField
+                      fullWidth
+                      label="ค้นหาสถานที่ (mock)"
+                      value={mapQuery}
+                      onChange={(e) => setMapQuery(e.target.value)}
+                      placeholder="เช่น ดอนเมือง / รัชดา / สุพรรณบุรี"
+                      sx={roundedFieldSX}
+                      InputProps={{
+                        startAdornment: (
+                          <SearchRoundedIcon
+                            sx={{ mr: 1, color: "rgb(100 116 139)" }}
+                          />
+                        ),
+                      }}
+                    />
+
+                    {placeResults.length ? (
+                      <Box className="rounded-2xl border border-slate-200 bg-slate-50 p-2">
+                        <Stack spacing={1}>
+                          {placeResults.map((place) => (
+                            <Button
+                              key={`${place.label}-${place.lat}-${place.lng}`}
+                              variant="text"
+                              onClick={() => applyPlaceResult(place)}
+                              sx={{
+                                justifyContent: "flex-start",
+                                textTransform: "none",
+                                borderRadius: 2,
+                                color: "rgb(15 23 42)",
+                              }}
+                              startIcon={<RoomRoundedIcon />}
+                            >
+                              <Box className="text-left">
+                                <Typography className="text-sm font-semibold text-slate-900">
+                                  {place.label}
+                                </Typography>
+                                <Typography className="text-xs text-slate-500">
+                                  {place.address}
+                                </Typography>
+                              </Box>
+                            </Button>
+                          ))}
+                        </Stack>
+                      </Box>
+                    ) : null}
+
+                    <TextField
+                      fullWidth
+                      label="Latitude"
+                      value={editLat}
+                      onChange={(e) => setEditLat(e.target.value)}
+                      placeholder="เช่น 13.7563"
+                      sx={roundedFieldSX}
+                    />
+
+                    <TextField
+                      fullWidth
+                      label="Longitude"
+                      value={editLng}
+                      onChange={(e) => setEditLng(e.target.value)}
+                      placeholder="เช่น 100.5018"
+                      sx={roundedFieldSX}
+                    />
+
+                    {buildGoogleMapsUrl(editLat, editLng) ? (
                       <Button
-                        key={action.label}
-                        variant={isActive ? "contained" : action.variant}
-                        startIcon={action.icon}
-                        onClick={() => setNextActive(action.value)}
+                        component="a"
+                        href={buildGoogleMapsUrl(editLat, editLng)}
+                        target="_blank"
+                        rel="noreferrer"
+                        variant="outlined"
+                        startIcon={<OpenInNewRoundedIcon />}
                         sx={{
-                          flex: 1,
                           textTransform: "none",
+                          borderColor: "rgb(226 232 240)",
                           borderRadius: 2.5,
-                          ...(isActive
-                            ? {
-                                bgcolor: "rgb(15 23 42)",
-                                color: "white",
-                                boxShadow: "none",
-                                "&:hover": {
-                                  bgcolor: "rgb(2 6 23)",
-                                  boxShadow: "none",
-                                },
-                              }
-                            : action.sx),
                         }}
                       >
-                        {action.label}
+                        เปิดดูบน Google Maps
                       </Button>
-                    );
-                  })}
-                </Stack>
-              </Box>
+                    ) : null}
+                  </SectionCard>
 
-              <Stack direction="row" spacing={1} className="pt-0.5">
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  onClick={closeDrawer}
-                  sx={{
-                    textTransform: "none",
-                    borderColor: "rgb(226 232 240)",
-                    color: "rgb(15 23 42)",
-                    borderRadius: 2.5,
-                  }}
-                >
-                  ยกเลิก
-                </Button>
+                  <SectionCard title="สรุปข้อมูลสาขา">
+                    <InfoRow label="ชื่อสาขา" value={editName || "-"} />
+                    <InfoRow
+                      label="ประเภท"
+                      value={<BranchTypeChip type={editType} />}
+                    />
+                    <InfoRow label="ลำดับ" value={editDisplayOrder} />
+                    <InfoRow
+                      label="การให้บริการ"
+                      value={`${
+                        editPickupAvailable ? "รับรถได้" : "รับรถไม่ได้"
+                      } • ${editReturnAvailable ? "คืนรถได้" : "คืนรถไม่ได้"}`}
+                    />
+                    <InfoRow
+                      label="เวลาเปิด-ปิด"
+                      value={`${editOpenTime} - ${editCloseTime}`}
+                    />
+                    <InfoRow
+                      label="ค่าบริการเพิ่ม"
+                      value={
+                        editExtraFee > 0 ? formatTHB(editExtraFee) : "ไม่มี"
+                      }
+                    />
+                  </SectionCard>
 
-                <Button
-                  fullWidth
-                  variant="contained"
-                  onClick={saveBranchStatus}
-                  sx={{
-                    textTransform: "none",
-                    bgcolor: "rgb(15 23 42)",
-                    boxShadow: "none",
-                    borderRadius: 2.5,
-                    "&:hover": {
-                      bgcolor: "rgb(2 6 23)",
+                  {drawerMode === "detail" && selectedBranch ? (
+                    <SectionCard title="ข้อมูลระบบ">
+                      <InfoRow label="รหัสสาขา" value={selectedBranch.id} />
+                      <InfoRow
+                        label="วันที่สร้าง"
+                        value={selectedBranch.createdAt ?? "-"}
+                      />
+                      <InfoRow
+                        label="อัปเดตล่าสุด"
+                        value={selectedBranch.updatedAt ?? "-"}
+                      />
+                    </SectionCard>
+                  ) : null}
+                </Box>
+
+                <Stack direction="row" spacing={2} className="pt-0.5">
+                  <Button
+                    fullWidth
+                    size="medium"
+                    variant="outlined"
+                    onClick={closeDrawer}
+                    sx={{
+                      textTransform: "none",
+                      borderColor: "rgb(226 232 240)",
+                      color: "rgb(15 23 42)",
+                      borderRadius: 2.5,
+                    }}
+                  >
+                    ปิดหน้าต่าง
+                  </Button>
+                  <Button
+                    fullWidth
+                    size="medium"
+                    variant="contained"
+                    onClick={saveBranchForm}
+                    sx={{
+                      textTransform: "none",
+                      bgcolor: "rgb(15 23 42)",
                       boxShadow: "none",
-                    },
-                  }}
-                >
-                  บันทึกสถานะ
-                </Button>
+                      borderRadius: 2.5,
+                      "&:hover": {
+                        bgcolor: "rgb(2 6 23)",
+                        boxShadow: "none",
+                      },
+                    }}
+                  >
+                    {drawerMode === "create" ? "เพิ่มสาขา" : "บันทึกข้อมูล"}
+                  </Button>
+                </Stack>
               </Stack>
-            </Stack>
-          ) : null}
+            )}
+
+            {drawerMode === "status" && selectedBranch ? (
+              <Stack spacing={2}>
+                <Box className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <Stack direction="row" spacing={1} className="items-center">
+                    <Typography className="text-sm font-bold text-slate-900">
+                      สถานะปัจจุบัน
+                    </Typography>
+                    <BranchStatusChip active={selectedBranch.active} />
+                  </Stack>
+                </Box>
+
+                <Box className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1}
+                    className="items-start sm:items-center justify-between"
+                  >
+                    <Typography className="text-sm font-bold text-slate-900">
+                      เลือกสถานะใหม่
+                    </Typography>
+
+                    <Stack direction="row" spacing={1} className="items-center">
+                      <Typography className="text-xs text-slate-500">
+                        จะบันทึกเป็น
+                      </Typography>
+                      <BranchStatusChip active={nextActive} />
+                    </Stack>
+                  </Stack>
+
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1.2}
+                    className="mt-4"
+                  >
+                    {quickActions.map((action) => {
+                      const isActive = nextActive === action.value;
+
+                      return (
+                        <Button
+                          key={action.label}
+                          variant={isActive ? "contained" : action.variant}
+                          startIcon={action.icon}
+                          onClick={() => setNextActive(action.value)}
+                          sx={{
+                            flex: 1,
+                            borderRadius: 2.5,
+                            ...(isActive
+                              ? {
+                                  bgcolor: "rgb(15 23 42)",
+                                  color: "white",
+                                  boxShadow: "none",
+                                  "&:hover": {
+                                    bgcolor: "rgb(2 6 23)",
+                                    boxShadow: "none",
+                                  },
+                                }
+                              : action.sx),
+                          }}
+                        >
+                          {action.label}
+                        </Button>
+                      );
+                    })}
+                  </Stack>
+                </Box>
+
+                <Stack direction="row" spacing={2} className="pt-0.5">
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={closeDrawer}
+                    sx={{
+                      textTransform: "none",
+                      borderColor: "rgb(226 232 240)",
+                      color: "rgb(15 23 42)",
+                      borderRadius: 2.5,
+                    }}
+                  >
+                    ยกเลิก
+                  </Button>
+
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={saveBranchStatus}
+                    sx={{
+                      textTransform: "none",
+                      bgcolor: "rgb(15 23 42)",
+                      boxShadow: "none",
+                      borderRadius: 2.5,
+                      "&:hover": {
+                        bgcolor: "rgb(2 6 23)",
+                        boxShadow: "none",
+                      },
+                    }}
+                  >
+                    บันทึกสถานะ
+                  </Button>
+                </Stack>
+              </Stack>
+            ) : null}
+
+            {drawerMode === "delete" && selectedBranch ? (
+              <Stack spacing={2}>
+                <Box className="overflow-hidden rounded-2xl border border-red-200 bg-white mb-1">
+                  <Box
+                    className="relative bg-linear-to-br from-red-900 to-rose-700"
+                    sx={{ minHeight: 220 }}
+                  >
+                    <Box className="grid h-55 w-full place-items-center text-red-100">
+                      <DeleteOutlineRoundedIcon sx={{ fontSize: 60 }} />
+                    </Box>
+
+                    <Box
+                      className="absolute inset-0"
+                      sx={{
+                        background:
+                          "linear-gradient(to bottom, rgba(127,29,29,0.82), rgba(127,29,29,0.18))",
+                      }}
+                    />
+
+                    <Box className="absolute inset-x-0 top-0 p-4 text-white">
+                      <Typography className="text-xs font-semibold uppercase tracking-[0.2em] text-red-100/80">
+                        Delete Branch
+                      </Typography>
+
+                      <Typography className="mt-2 text-xl font-extrabold">
+                        ยืนยันการลบสาขา
+                      </Typography>
+
+                      <Typography className="mt-2 text-sm text-red-100">
+                        รายการนี้จะถูกลบออกจากระบบทันที
+                      </Typography>
+
+                      <Typography className="mt-4 text-sm text-red-100/80">
+                        รายการที่เลือก
+                      </Typography>
+                      <Typography className="text-2xl font-extrabold">
+                        {selectedBranch.name}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+
+                <Box className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <SectionCard title="ข้อมูลสาขา">
+                    <InfoRow label="รหัสสาขา" value={selectedBranch.id} />
+                    <InfoRow label="ชื่อสาขา" value={selectedBranch.name} />
+                    <InfoRow
+                      label="ประเภท"
+                      value={<BranchTypeChip type={selectedBranch.type} />}
+                    />
+                    <InfoRow
+                      label="ค่าบริการเพิ่ม"
+                      value={
+                        selectedBranch.extraFee > 0
+                          ? formatTHB(selectedBranch.extraFee)
+                          : "ไม่มี"
+                      }
+                    />
+                  </SectionCard>
+
+                  <SectionCard title="ผลกระทบ">
+                    <Typography className="text-sm text-slate-700">
+                      เมื่อลบแล้ว สาขานี้จะไม่สามารถเลือกใช้งานในระบบได้อีก
+                    </Typography>
+                    <Typography className="text-sm text-slate-700">
+                      ตรวจสอบให้แน่ใจก่อนดำเนินการ
+                    </Typography>
+                  </SectionCard>
+                </Box>
+
+                <Stack direction="row" spacing={2} className="pt-0.5">
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={closeDrawer}
+                    sx={{
+                      textTransform: "none",
+                      borderColor: "rgb(226 232 240)",
+                      color: "rgb(15 23 42)",
+                      borderRadius: 2.5,
+                    }}
+                  >
+                    ยกเลิก
+                  </Button>
+
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    color="error"
+                    startIcon={<DeleteOutlineRoundedIcon />}
+                    onClick={() => {
+                      removeBranch(selectedBranch.id);
+                      closeDrawer();
+                    }}
+                    sx={{
+                      textTransform: "none",
+                      boxShadow: "none",
+                      borderRadius: 2.5,
+                    }}
+                  >
+                    ยืนยันการลบ
+                  </Button>
+                </Stack>
+              </Stack>
+            ) : null}
+          </Box>
         </Box>
       </Drawer>
 
