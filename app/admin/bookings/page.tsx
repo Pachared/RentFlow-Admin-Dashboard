@@ -205,7 +205,7 @@ function StatusChip({ s }: { s: BookingStatus }) {
 
   return (
     <Chip
-      size="small"
+      size="medium"
       label={m.label}
       variant="outlined"
       sx={statusChipSX(m.tone)}
@@ -278,7 +278,7 @@ function CarThumb({
         />
       ) : (
         <Box className="grid h-full w-full place-items-center text-slate-400">
-          <DirectionsCarRoundedIcon fontSize="small" />
+          <DirectionsCarRoundedIcon fontSize="medium" />
         </Box>
       )}
     </Box>
@@ -701,446 +701,505 @@ export default function AdminBookingsPage() {
         PaperProps={{
           sx: {
             width: isMobile ? "100%" : 700,
-            height: isMobile ? "80%" : "100%",
+            height: isMobile ? "88%" : "100%",
+            borderTopLeftRadius: isMobile ? 18 : 0,
+            borderTopRightRadius: isMobile ? 18 : 0,
+            overflow: "hidden",
+            bgcolor: "rgb(248 250 252)",
           },
         }}
       >
-        <Box className="p-4">
-          <Stack
-            direction="row"
-            spacing={1.25}
-            className="items-center justify-between"
+        <Box className="flex h-full flex-col">
+          {/* Topbar */}
+          <Box
+            sx={{
+              position: "sticky",
+              top: 0,
+              zIndex: 20,
+              borderBottom: "1px solid rgb(226 232 240)",
+              backgroundColor: "rgba(255,255,255,0.92)",
+              backdropFilter: "blur(10px)",
+            }}
           >
-            <Stack
-              direction="row"
-              spacing={1.25}
-              className="items-center min-w-0"
-            >
-              <Box className="min-w-0">
-                <Typography className="text-sm font-black text-slate-900">
-                  {drawerMode === "detail"
-                    ? "รายละเอียดการจอง"
-                    : drawerMode === "status"
-                    ? "เปลี่ยนสถานะการจอง"
-                    : "ยืนยันการยกเลิก"}
-                </Typography>
-                <Typography className="text-xs text-slate-500">
-                  {selectedBooking
-                    ? `${selectedBooking.id} • ${selectedBooking.carName}`
-                    : "-"}
-                </Typography>
+            {isMobile ? (
+              <Box className="flex justify-center pt-2">
+                <Box className="h-1.5 w-12 rounded-full bg-slate-300" />
               </Box>
-            </Stack>
+            ) : null}
 
-            <Stack direction="row" spacing={1} className="items-center">
-              <IconButton onClick={closeDrawer}>
-                <CloseRoundedIcon />
-              </IconButton>
-            </Stack>
-          </Stack>
-
-          <Divider className="my-4! border-slate-200!" />
-
-          {drawerMode === "detail" && selectedBooking ? (
-            <Stack spacing={2}>
-              <Box className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                <Box
-                  className="relative bg-linear-to-br from-slate-900 to-slate-700"
-                  sx={{ minHeight: 220 }}
+            <Box className="px-4 py-3">
+              <Stack
+                direction="row"
+                spacing={1.5}
+                className="items-center justify-between"
+              >
+                <Stack
+                  direction="row"
+                  spacing={1.25}
+                  className="items-center min-w-0"
                 >
-                  {selectedBooking.carImage ? (
+                  <Box
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-slate-200"
+                    sx={{
+                      bgcolor:
+                        drawerMode === "detail"
+                          ? "rgb(241 245 249)"
+                          : drawerMode === "status"
+                          ? "rgb(254 249 195)"
+                          : "rgb(254 242 242)",
+                      color:
+                        drawerMode === "detail"
+                          ? "rgb(15 23 42)"
+                          : drawerMode === "status"
+                          ? "rgb(146 64 14)"
+                          : "rgb(185 28 28)",
+                    }}
+                  >
+                    {drawerMode === "detail" ? (
+                      <DirectionsCarRoundedIcon sx={{ fontSize: 20 }} />
+                    ) : drawerMode === "status" ? (
+                      <CheckCircleRoundedIcon sx={{ fontSize: 20 }} />
+                    ) : (
+                      <CloseRoundedIcon sx={{ fontSize: 20 }} />
+                    )}
+                  </Box>
+
+                  <Box className="min-w-0">
+                    <Typography className="truncate text-sm font-black text-slate-900">
+                      {drawerMode === "detail"
+                        ? "รายละเอียดการจอง"
+                        : drawerMode === "status"
+                        ? "เปลี่ยนสถานะการจอง"
+                        : "ยืนยันการยกเลิก"}
+                    </Typography>
+
+                    <Typography className="truncate text-xs text-slate-500">
+                      {selectedBooking
+                        ? `${selectedBooking.id} • ${selectedBooking.carName}`
+                        : "-"}
+                    </Typography>
+                  </Box>
+                </Stack>
+
+                <IconButton
+                  onClick={closeDrawer}
+                  sx={{
+                    border: "1px solid rgb(226 232 240)",
+                    bgcolor: "white",
+                    "&:hover": {
+                      bgcolor: "rgb(248 250 252)",
+                    },
+                  }}
+                >
+                  <CloseRoundedIcon />
+                </IconButton>
+              </Stack>
+            </Box>
+          </Box>
+
+          {/* Content */}
+          <Box className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+            {drawerMode === "detail" && selectedBooking ? (
+              <Stack spacing={2}>
+                <Box className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                  <Box
+                    className="relative bg-linear-to-br from-slate-900 to-slate-700"
+                    sx={{ minHeight: 220 }}
+                  >
+                    {selectedBooking.carImage ? (
+                      <Box
+                        component="img"
+                        src={selectedBooking.carImage}
+                        alt={selectedBooking.carName}
+                        sx={{
+                          width: "100%",
+                          height: 220,
+                          objectFit: "cover",
+                          display: "block",
+                          opacity: 0.5,
+                        }}
+                      />
+                    ) : (
+                      <Box className="grid h-55 w-full place-items-center text-slate-300">
+                        <DirectionsCarRoundedIcon sx={{ fontSize: 56 }} />
+                      </Box>
+                    )}
+
                     <Box
-                      component="img"
-                      src={selectedBooking.carImage}
-                      alt={selectedBooking.carName}
+                      className="absolute inset-0"
                       sx={{
-                        width: "100%",
-                        height: 220,
-                        objectFit: "cover",
-                        display: "block",
-                        opacity: 0.5,
+                        background:
+                          "linear-gradient(to bottom, rgba(15,23,42,0.82), rgba(15,23,42,0.18))",
                       }}
                     />
-                  ) : (
-                    <Box className="grid h-55 w-full place-items-center text-slate-300">
-                      <DirectionsCarRoundedIcon sx={{ fontSize: 56 }} />
-                    </Box>
-                  )}
 
-                  <Box
-                    className="absolute inset-0"
-                    sx={{
-                      background:
-                        "linear-gradient(to bottom, rgba(15,23,42,0.82), rgba(15,23,42,0.18))",
-                    }}
-                  />
-
-                  <Box className="absolute inset-x-0 top-0 p-4 text-white">
-                    <Typography className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
-                      Booking Overview
-                    </Typography>
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      className="mt-2 items-center flex-wrap"
-                    >
-                      <Typography className="text-xl font-extrabold">
-                        {selectedBooking.carName}
+                    <Box className="absolute inset-x-0 top-0 p-4 text-white">
+                      <Typography className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
+                        Booking Overview
                       </Typography>
-                    </Stack>
-                    <Typography className="mt-2 text-sm text-slate-200">
-                      {selectedBooking.pickupDate} ถึง{" "}
-                      {selectedBooking.returnDate}
-                    </Typography>
-                    <Typography className="mt-4 text-sm text-slate-300">
-                      ยอดรวม
-                    </Typography>
-                    <Typography className="text-2xl font-extrabold">
-                      {formatTHB(selectedBooking.totalPrice)}
-                    </Typography>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        className="mt-2 items-center flex-wrap"
+                      >
+                        <Typography className="text-xl font-extrabold">
+                          {selectedBooking.carName}
+                        </Typography>
+                      </Stack>
+                      <Typography className="mt-2 text-sm text-slate-200">
+                        {selectedBooking.pickupDate} ถึง{" "}
+                        {selectedBooking.returnDate}
+                      </Typography>
+                      <Typography className="mt-4 text-sm text-slate-300">
+                        ยอดรวม
+                      </Typography>
+                      <Typography className="text-2xl font-extrabold">
+                        {formatTHB(selectedBooking.totalPrice)}
+                      </Typography>
+                    </Box>
                   </Box>
                 </Box>
-              </Box>
 
-              <Box className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <SectionCard title="ข้อมูลรถ">
-                  <InfoRow label="รหัสการจอง" value={selectedBooking.id} />
-                  <InfoRow label="รุ่นรถ" value={selectedBooking.carName} />
-                  <InfoRow
-                    label="ยอดรวม"
-                    value={formatTHB(selectedBooking.totalPrice)}
-                  />
-                  <InfoRow
-                    label="สถานะ"
-                    value={<StatusChip s={selectedBooking.status} />}
-                  />
-                </SectionCard>
+                <Box className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <SectionCard title="ข้อมูลรถ">
+                    <InfoRow label="รหัสการจอง" value={selectedBooking.id} />
+                    <InfoRow label="รุ่นรถ" value={selectedBooking.carName} />
+                    <InfoRow
+                      label="ยอดรวม"
+                      value={formatTHB(selectedBooking.totalPrice)}
+                    />
+                    <InfoRow
+                      label="สถานะ"
+                      value={<StatusChip s={selectedBooking.status} />}
+                    />
+                  </SectionCard>
 
-                <SectionCard title="ข้อมูลลูกค้า">
-                  <InfoRow
-                    label="ชื่อผู้จอง"
-                    value={selectedBooking.customerName}
-                  />
-                  <InfoRow label="เบอร์โทร" value={selectedBooking.phone} />
-                </SectionCard>
+                  <SectionCard title="ข้อมูลลูกค้า">
+                    <InfoRow
+                      label="ชื่อผู้จอง"
+                      value={selectedBooking.customerName}
+                    />
+                    <InfoRow label="เบอร์โทร" value={selectedBooking.phone} />
+                  </SectionCard>
 
-                <SectionCard title="ข้อมูลการรับรถ">
-                  <InfoRow
-                    label="วันรับรถ"
-                    value={selectedBooking.pickupDate}
-                  />
-                  <InfoRow
-                    label="จุดรับรถ"
-                    value={selectedBooking.pickupLocation}
-                  />
-                </SectionCard>
+                  <SectionCard title="ข้อมูลการรับรถ">
+                    <InfoRow
+                      label="วันรับรถ"
+                      value={selectedBooking.pickupDate}
+                    />
+                    <InfoRow
+                      label="จุดรับรถ"
+                      value={selectedBooking.pickupLocation}
+                    />
+                  </SectionCard>
 
-                <SectionCard title="ข้อมูลการคืนรถ">
-                  <InfoRow
-                    label="วันคืนรถ"
-                    value={selectedBooking.returnDate}
-                  />
-                  <InfoRow
-                    label="จุดคืนรถ"
-                    value={selectedBooking.returnLocation}
-                  />
-                </SectionCard>
+                  <SectionCard title="ข้อมูลการคืนรถ">
+                    <InfoRow
+                      label="วันคืนรถ"
+                      value={selectedBooking.returnDate}
+                    />
+                    <InfoRow
+                      label="จุดคืนรถ"
+                      value={selectedBooking.returnLocation}
+                    />
+                  </SectionCard>
 
-                <SectionCard title="ข้อมูลระบบ">
-                  <InfoRow
-                    label="วันที่สร้าง"
-                    value={selectedBooking.createdAt}
-                  />
-                  <InfoRow
-                    label="อัปเดตล่าสุด"
-                    value={selectedBooking.updatedAt}
-                  />
-                </SectionCard>
+                  <SectionCard title="ข้อมูลระบบ">
+                    <InfoRow
+                      label="วันที่สร้าง"
+                      value={selectedBooking.createdAt}
+                    />
+                    <InfoRow
+                      label="อัปเดตล่าสุด"
+                      value={selectedBooking.updatedAt}
+                    />
+                  </SectionCard>
 
-                <SectionCard title="หมายเหตุภายในแอดมิน">
-                  <Typography className="text-sm leading-6 text-slate-700">
-                    {selectedBooking.adminNote?.trim()
-                      ? selectedBooking.adminNote
-                      : "ยังไม่มีหมายเหตุภายใน"}
-                  </Typography>
-                </SectionCard>
+                  <SectionCard title="หมายเหตุภายในแอดมิน">
+                    <Typography className="text-sm leading-6 text-slate-700">
+                      {selectedBooking.adminNote?.trim()
+                        ? selectedBooking.adminNote
+                        : "ยังไม่มีหมายเหตุภายใน"}
+                    </Typography>
+                  </SectionCard>
 
-                <SectionCard title="หมายเหตุที่ลูกค้าเห็น">
-                  <Typography className="text-sm leading-6 text-slate-700">
-                    {selectedBooking.customerNote?.trim()
-                      ? selectedBooking.customerNote
-                      : "ยังไม่มีหมายเหตุสำหรับลูกค้า"}
-                  </Typography>
-                </SectionCard>
-              </Box>
+                  <SectionCard title="หมายเหตุที่ลูกค้าเห็น">
+                    <Typography className="text-sm leading-6 text-slate-700">
+                      {selectedBooking.customerNote?.trim()
+                        ? selectedBooking.customerNote
+                        : "ยังไม่มีหมายเหตุสำหรับลูกค้า"}
+                    </Typography>
+                  </SectionCard>
+                </Box>
 
-              <Stack direction="row" spacing={1} className="pt-0.5">
-                <Button
-                  fullWidth
-                  size="medium"
-                  variant="outlined"
-                  onClick={closeDrawer}
-                  sx={{
-                    textTransform: "none",
-                    borderColor: "rgb(226 232 240)",
-                    color: "rgb(15 23 42)",
-                    borderRadius: 2.5,
-                  }}
-                >
-                  ปิดหน้าต่าง
-                </Button>
-                <Button
-                  fullWidth
-                  size="medium"
-                  variant="contained"
-                  onClick={() => setDrawerMode("status")}
-                  sx={{
-                    textTransform: "none",
-                    bgcolor: "rgb(15 23 42)",
-                    boxShadow: "none",
-                    borderRadius: 2.5,
-                    "&:hover": {
-                      bgcolor: "rgb(2 6 23)",
+                <Stack direction="row" spacing={1} className="pt-0.5">
+                  <Button
+                    fullWidth
+                    size="medium"
+                    variant="outlined"
+                    onClick={closeDrawer}
+                    sx={{
+                      textTransform: "none",
+                      borderColor: "rgb(226 232 240)",
+                      color: "rgb(15 23 42)",
+                      borderRadius: 2.5,
+                    }}
+                  >
+                    ปิดหน้าต่าง
+                  </Button>
+                  <Button
+                    fullWidth
+                    size="medium"
+                    variant="contained"
+                    onClick={() => setDrawerMode("status")}
+                    sx={{
+                      textTransform: "none",
+                      bgcolor: "rgb(15 23 42)",
                       boxShadow: "none",
-                    },
-                  }}
-                >
-                  เปลี่ยนสถานะ
-                </Button>
-              </Stack>
-            </Stack>
-          ) : null}
-
-          {drawerMode === "status" && selectedBooking ? (
-            <Stack spacing={2}>
-              <Box className="rounded-2xl border border-slate-200 bg-white p-4">
-                <Stack direction="row" spacing={1} className="items-center">
-                  <Typography className="text-sm font-bold text-slate-900">
-                    สถานะปัจจุบัน
-                  </Typography>
-                  <StatusChip s={selectedBooking.status} />
+                      borderRadius: 2.5,
+                      "&:hover": {
+                        bgcolor: "rgb(2 6 23)",
+                        boxShadow: "none",
+                      },
+                    }}
+                  >
+                    เปลี่ยนสถานะ
+                  </Button>
                 </Stack>
-              </Box>
+              </Stack>
+            ) : null}
 
-              <Box className="rounded-2xl border border-slate-200 bg-white p-4">
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1}
-                  className="items-start sm:items-center justify-between"
-                >
-                  <Typography className="text-sm font-bold text-slate-900">
-                    เลือกสถานะใหม่
-                  </Typography>
-
+            {drawerMode === "status" && selectedBooking ? (
+              <Stack spacing={2}>
+                <Box className="rounded-2xl border border-slate-200 bg-white p-4">
                   <Stack direction="row" spacing={1} className="items-center">
-                    <Typography className="text-xs text-slate-500">
-                      จะบันทึกเป็น
-                    </Typography>
-                    <StatusChip s={nextStatus} />
-                  </Stack>
-                </Stack>
-
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1.2}
-                  className="mt-4"
-                >
-                  {quickActions.map((action) => {
-                    const isActive = nextStatus === action.status;
-
-                    return (
-                      <Button
-                        key={action.status}
-                        variant={isActive ? "contained" : action.variant}
-                        startIcon={action.icon}
-                        onClick={() => setNextStatus(action.status)}
-                        sx={{
-                          flex: 1,
-                          textTransform: "none",
-                          borderRadius: 2.5,
-                          ...(isActive
-                            ? {
-                                bgcolor: "rgb(15 23 42)",
-                                color: "white",
-                                boxShadow: "none",
-                                "&:hover": {
-                                  bgcolor: "rgb(2 6 23)",
-                                  boxShadow: "none",
-                                },
-                              }
-                            : action.sx),
-                        }}
-                      >
-                        {action.label}
-                      </Button>
-                    );
-                  })}
-                </Stack>
-              </Box>
-
-              <Box className="rounded-2xl border border-slate-200 bg-white p-4">
-                <Stack spacing={2}>
-                  <TextField
-                    multiline
-                    minRows={4}
-                    fullWidth
-                    label="หมายเหตุภายในแอดมิน"
-                    value={adminNote}
-                    onChange={(e) => setAdminNote(e.target.value)}
-                    placeholder="เช่น ติดต่อแล้ว / รอเอกสาร / ลูกค้าขอเลื่อนเวลา"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "10px",
-                      },
-                    }}
-                  />
-
-                  <TextField
-                    multiline
-                    minRows={3}
-                    fullWidth
-                    label="หมายเหตุที่ลูกค้าเห็น"
-                    value={customerNote}
-                    onChange={(e) => setCustomerNote(e.target.value)}
-                    placeholder="เช่น การจองของคุณได้รับการยืนยันแล้ว / กรุณามาถึงก่อนเวลานัด"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "10px",
-                      },
-                    }}
-                  />
-
-                  <Box className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <Stack spacing={1}>
-                      <Typography className="text-xs font-medium text-slate-500">
-                        ข้อมูลที่จะถูกอัปเดต
-                      </Typography>
-                      <InfoRow
-                        label="สร้างเมื่อ"
-                        value={selectedBooking.createdAt}
-                      />
-                      <InfoRow
-                        label="อัปเดตล่าสุด"
-                        value={selectedBooking.updatedAt}
-                      />
-                    </Stack>
-                  </Box>
-                </Stack>
-              </Box>
-
-              <Stack direction="row" spacing={1} className="pt-0.5">
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  onClick={closeDrawer}
-                  sx={{
-                    textTransform: "none",
-                    borderColor: "rgb(226 232 240)",
-                    color: "rgb(15 23 42)",
-                    borderRadius: 2.5,
-                  }}
-                >
-                  ยกเลิก
-                </Button>
-
-                <Button
-                  fullWidth
-                  variant="contained"
-                  onClick={() => {
-                    if (nextStatus === "cancelled") {
-                      setDrawerMode("cancel");
-                      return;
-                    }
-                    applyStatusUpdate(nextStatus);
-                  }}
-                  sx={{
-                    textTransform: "none",
-                    bgcolor: "rgb(15 23 42)",
-                    boxShadow: "none",
-                    borderRadius: 2.5,
-                    "&:hover": {
-                      bgcolor: "rgb(2 6 23)",
-                      boxShadow: "none",
-                    },
-                  }}
-                >
-                  บันทึกสถานะ
-                </Button>
-              </Stack>
-            </Stack>
-          ) : null}
-
-          {drawerMode === "cancel" && selectedBooking ? (
-            <Stack spacing={2}>
-              <Box className="rounded-2xl border border-red-200 bg-red-50 p-4">
-                <Stack direction="row" spacing={1.25} className="items-start">
-                  <CarThumb
-                    src={selectedBooking.carImage}
-                    alt={selectedBooking.carName}
-                    width={72}
-                    height={52}
-                    rounded={12}
-                  />
-                  <Box>
                     <Typography className="text-sm font-bold text-slate-900">
-                      {selectedBooking.id}
+                      สถานะปัจจุบัน
                     </Typography>
-                    <Typography className="mt-1 text-sm text-slate-700">
-                      {selectedBooking.carName}
+                    <StatusChip s={selectedBooking.status} />
+                  </Stack>
+                </Box>
+
+                <Box className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1}
+                    className="items-start sm:items-center justify-between"
+                  >
+                    <Typography className="text-sm font-bold text-slate-900">
+                      เลือกสถานะใหม่
                     </Typography>
-                    <Typography className="mt-1 text-xs text-slate-500">
-                      ผู้จอง: {selectedBooking.customerName}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Box>
 
-              <Box>
-                <Typography className="text-sm text-slate-700">
-                  คุณต้องการยกเลิก booking นี้ใช่หรือไม่
-                </Typography>
-                <Typography className="mt-2 text-xs text-red-600">
-                  หลังยืนยันแล้ว สถานะจะถูกเปลี่ยนเป็น “ยกเลิก”
-                </Typography>
-              </Box>
+                    <Stack direction="row" spacing={1} className="items-center">
+                      <Typography className="text-xs text-slate-500">
+                        จะบันทึกเป็น
+                      </Typography>
+                      <StatusChip s={nextStatus} />
+                    </Stack>
+                  </Stack>
 
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                <Button
-                  fullWidth
-                  size="medium"
-                  variant="outlined"
-                  onClick={() => setDrawerMode("status")}
-                  sx={{
-                    textTransform: "none",
-                    borderColor: "rgb(226 232 240)",
-                    color: "rgb(15 23 42)",
-                    borderRadius: 2.5,
-                  }}
-                >
-                  กลับไปแก้ไข
-                </Button>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1.2}
+                    className="mt-4"
+                  >
+                    {quickActions.map((action) => {
+                      const isActive = nextStatus === action.status;
 
-                <Button
-                  fullWidth
-                  size="medium"
-                  variant="contained"
-                  onClick={() => applyStatusUpdate("cancelled")}
-                  sx={{
-                    textTransform: "none",
-                    bgcolor: "rgb(220 38 38)",
-                    boxShadow: "none",
-                    borderRadius: 2.5,
-                    "&:hover": {
-                      bgcolor: "rgb(185 28 28)",
+                      return (
+                        <Button
+                          key={action.status}
+                          variant={isActive ? "contained" : action.variant}
+                          startIcon={action.icon}
+                          onClick={() => setNextStatus(action.status)}
+                          sx={{
+                            flex: 1,
+                            textTransform: "none",
+                            borderRadius: 2.5,
+                            ...(isActive
+                              ? {
+                                  bgcolor: "rgb(15 23 42)",
+                                  color: "white",
+                                  boxShadow: "none",
+                                  "&:hover": {
+                                    bgcolor: "rgb(2 6 23)",
+                                    boxShadow: "none",
+                                  },
+                                }
+                              : action.sx),
+                          }}
+                        >
+                          {action.label}
+                        </Button>
+                      );
+                    })}
+                  </Stack>
+                </Box>
+
+                <Box className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <Stack spacing={2}>
+                    <TextField
+                      multiline
+                      minRows={4}
+                      fullWidth
+                      label="หมายเหตุภายในแอดมิน"
+                      value={adminNote}
+                      onChange={(e) => setAdminNote(e.target.value)}
+                      placeholder="เช่น ติดต่อแล้ว / รอเอกสาร / ลูกค้าขอเลื่อนเวลา"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: "10px",
+                        },
+                      }}
+                    />
+
+                    <TextField
+                      multiline
+                      minRows={3}
+                      fullWidth
+                      label="หมายเหตุที่ลูกค้าเห็น"
+                      value={customerNote}
+                      onChange={(e) => setCustomerNote(e.target.value)}
+                      placeholder="เช่น การจองของคุณได้รับการยืนยันแล้ว / กรุณามาถึงก่อนเวลานัด"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: "10px",
+                        },
+                      }}
+                    />
+
+                    <Box className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <Stack spacing={1}>
+                        <Typography className="text-xs font-medium text-slate-500">
+                          ข้อมูลที่จะถูกอัปเดต
+                        </Typography>
+                        <InfoRow
+                          label="สร้างเมื่อ"
+                          value={selectedBooking.createdAt}
+                        />
+                        <InfoRow
+                          label="อัปเดตล่าสุด"
+                          value={selectedBooking.updatedAt}
+                        />
+                      </Stack>
+                    </Box>
+                  </Stack>
+                </Box>
+
+                <Stack direction="row" spacing={1} className="pt-0.5">
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={closeDrawer}
+                    sx={{
+                      textTransform: "none",
+                      borderColor: "rgb(226 232 240)",
+                      color: "rgb(15 23 42)",
+                      borderRadius: 2.5,
+                    }}
+                  >
+                    ยกเลิก
+                  </Button>
+
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={() => {
+                      if (nextStatus === "cancelled") {
+                        setDrawerMode("cancel");
+                        return;
+                      }
+                      applyStatusUpdate(nextStatus);
+                    }}
+                    sx={{
+                      textTransform: "none",
+                      bgcolor: "rgb(15 23 42)",
                       boxShadow: "none",
-                    },
-                  }}
-                >
-                  ยืนยันการยกเลิก
-                </Button>
+                      borderRadius: 2.5,
+                      "&:hover": {
+                        bgcolor: "rgb(2 6 23)",
+                        boxShadow: "none",
+                      },
+                    }}
+                  >
+                    บันทึกสถานะ
+                  </Button>
+                </Stack>
               </Stack>
-            </Stack>
-          ) : null}
+            ) : null}
+
+            {drawerMode === "cancel" && selectedBooking ? (
+              <Stack spacing={2}>
+                <Box className="rounded-2xl border border-red-200 bg-red-50 p-4">
+                  <Stack direction="row" spacing={1.25} className="items-start">
+                    <CarThumb
+                      src={selectedBooking.carImage}
+                      alt={selectedBooking.carName}
+                      width={72}
+                      height={52}
+                      rounded={12}
+                    />
+                    <Box>
+                      <Typography className="text-sm font-bold text-slate-900">
+                        {selectedBooking.id}
+                      </Typography>
+                      <Typography className="mt-1 text-sm text-slate-700">
+                        {selectedBooking.carName}
+                      </Typography>
+                      <Typography className="mt-1 text-xs text-slate-500">
+                        ผู้จอง: {selectedBooking.customerName}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+
+                <Box>
+                  <Typography className="text-sm text-slate-700">
+                    คุณต้องการยกเลิก booking นี้ใช่หรือไม่
+                  </Typography>
+                  <Typography className="mt-2 text-xs text-red-600">
+                    หลังยืนยันแล้ว สถานะจะถูกเปลี่ยนเป็น “ยกเลิก”
+                  </Typography>
+                </Box>
+
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                  <Button
+                    fullWidth
+                    size="medium"
+                    variant="outlined"
+                    onClick={() => setDrawerMode("status")}
+                    sx={{
+                      textTransform: "none",
+                      borderColor: "rgb(226 232 240)",
+                      color: "rgb(15 23 42)",
+                      borderRadius: 2.5,
+                    }}
+                  >
+                    กลับไปแก้ไข
+                  </Button>
+
+                  <Button
+                    fullWidth
+                    size="medium"
+                    variant="contained"
+                    onClick={() => applyStatusUpdate("cancelled")}
+                    sx={{
+                      textTransform: "none",
+                      bgcolor: "rgb(220 38 38)",
+                      boxShadow: "none",
+                      borderRadius: 2.5,
+                      "&:hover": {
+                        bgcolor: "rgb(185 28 28)",
+                        boxShadow: "none",
+                      },
+                    }}
+                  >
+                    ยืนยันการยกเลิก
+                  </Button>
+                </Stack>
+              </Stack>
+            ) : null}
+          </Box>
         </Box>
       </Drawer>
 
