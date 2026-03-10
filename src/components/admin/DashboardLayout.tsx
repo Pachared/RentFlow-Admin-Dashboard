@@ -25,12 +25,11 @@ export default function DashboardLayout({ children, drawerWidth = 280 }: Props) 
                 drawerWidth={drawerWidth}
             />
 
-            {/* Content */}
             <Box
                 component="main"
                 sx={{
                     ml: { md: `${drawerWidth}px` },
-                    pt: "64px", // กัน topbar
+                    pt: "64px",
                 }}
             >
                 <Container maxWidth="lg" className="py-6">
