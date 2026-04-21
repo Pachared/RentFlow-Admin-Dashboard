@@ -22,10 +22,9 @@ import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import VisibilityOffRoundedIcon from "@mui/icons-material/VisibilityOffRounded";
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
-import {
-    RentFlowApiError,
-    rentFlowPartnerApi,
-} from "@/src/lib/rentflow-api";
+import { authService } from "@/src/services/auth/auth.service";
+import { RentFlowApiError } from "@/src/services/core/api-client.service";
+import { tenantService } from "@/src/services/tenant/tenant.service";
 import { writeStoreProfile } from "@/src/lib/partner-store";
 
 const pillFieldSX = {
@@ -88,7 +87,7 @@ export default function Login() {
         try {
             setLoading(true);
 
-            await rentFlowPartnerApi.login({
+            await authService.login({
                 username: username.trim(),
                 password,
             });
@@ -98,7 +97,7 @@ export default function Login() {
             const safeNext = next.startsWith("/admin") ? next : "/admin/dashboard";
 
             try {
-                const tenant = await rentFlowPartnerApi.getMyTenant();
+                const tenant = await tenantService.getMyTenant();
                 writeStoreProfile({
                     tenantId: tenant.id,
                     shopName: tenant.shopName,

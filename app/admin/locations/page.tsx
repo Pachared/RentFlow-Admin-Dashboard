@@ -26,11 +26,11 @@ import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
-import {
-  rentFlowPartnerApi,
-  type PartnerBranch,
-  type PartnerBranchPayload,
-} from "@/src/lib/rentflow-api";
+import { branchesService } from "@/src/services/branches/branches.service";
+import type {
+  PartnerBranch,
+  PartnerBranchPayload,
+} from "@/src/services/branches/branches.types";
 
 type BranchType = NonNullable<PartnerBranch["type"]>;
 type BranchForm = PartnerBranchPayload;
@@ -135,7 +135,7 @@ export default function AdminLocationsPage() {
   const loadBranches = React.useCallback(async () => {
     setLoading(true);
     try {
-      const response = await rentFlowPartnerApi.getBranches();
+      const response = await branchesService.getBranches();
       setBranches(response.items);
     } catch (error: unknown) {
       setSnack({
@@ -210,9 +210,9 @@ export default function AdminLocationsPage() {
     try {
       setSaving(true);
       if (selectedBranch) {
-        await rentFlowPartnerApi.updateBranch(selectedBranch.id, form);
+        await branchesService.updateBranch(selectedBranch.id, form);
       } else {
-        await rentFlowPartnerApi.createBranch(form);
+        await branchesService.createBranch(form);
       }
 
       setSnack({
@@ -238,7 +238,7 @@ export default function AdminLocationsPage() {
     if (!window.confirm(`ต้องการลบสาขา "${branch.name}" ใช่หรือไม่`)) return;
 
     try {
-      await rentFlowPartnerApi.deleteBranch(branch.id);
+      await branchesService.deleteBranch(branch.id);
       setSnack({ open: true, message: "ลบสาขาสำเร็จ", severity: "info" });
       await loadBranches();
     } catch (error: unknown) {
@@ -265,8 +265,8 @@ export default function AdminLocationsPage() {
 
     try {
       await Promise.all([
-        rentFlowPartnerApi.updateBranch(branch.id, branchPayload),
-        rentFlowPartnerApi.updateBranch(target.id, targetPayload),
+        branchesService.updateBranch(branch.id, branchPayload),
+        branchesService.updateBranch(target.id, targetPayload),
       ]);
       setSnack({ open: true, message: "อัปเดตลำดับสาขาแล้ว", severity: "success" });
       await loadBranches();

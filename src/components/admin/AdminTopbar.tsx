@@ -27,7 +27,7 @@ import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
 import { readStoreProfile, type PartnerStoreProfile } from "@/src/lib/partner-store";
-import { rentFlowPartnerApi } from "@/src/lib/rentflow-api";
+import { authService } from "@/src/services/auth/auth.service";
 
 const TOKEN_COOKIE = "rentflow_session";
 
@@ -62,7 +62,7 @@ export default function AdminTopbar({
   }, []);
 
   async function logout() {
-    await rentFlowPartnerApi.logout().catch(() => null);
+    await authService.logout().catch(() => null);
     document.cookie = `${TOKEN_COOKIE}=; path=/; max-age=0`;
     router.replace("/login");
   }

@@ -14,6 +14,7 @@ import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 import FactCheckRoundedIcon from "@mui/icons-material/FactCheckRounded";
 import ForumRoundedIcon from "@mui/icons-material/ForumRounded";
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
 
 export type AdminNavGroup =
@@ -118,6 +119,13 @@ export const ADMIN_NAV: AdminNavItem[] = [
     color: "#5B21B6",
   },
   {
+    label: "AI Assistant",
+    href: "/admin/ai",
+    icon: AutoAwesomeRoundedIcon,
+    group: "Analytics",
+    color: "#7C3AED",
+  },
+  {
     label: "ตั้งค่าร้าน / Domain",
     href: "/admin/store-setup",
     icon: StorefrontRoundedIcon,
@@ -138,11 +146,4 @@ export const ADMIN_NAV: AdminNavItem[] = [
     group: "Administration",
     color: "#BE185D",
   },
-  // {
-  //   label: "ผู้ใช้แอดมิน/สิทธิ์",
-  //   href: "/admin/admin-users",
-  //   icon: AdminPanelSettingsRoundedIcon,
-  //   group: "Administration",
-  //   color: "#1E293B",
-  // },
 ];

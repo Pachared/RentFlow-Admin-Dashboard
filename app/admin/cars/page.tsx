@@ -24,13 +24,14 @@ import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
-import {
-  rentFlowPartnerApi,
-  type PartnerBranch,
-  type PartnerCar,
-  type PartnerCarPayload,
-  type PartnerCarStatus,
-} from "@/src/lib/rentflow-api";
+import { branchesService } from "@/src/services/branches/branches.service";
+import type { PartnerBranch } from "@/src/services/branches/branches.types";
+import { carsService } from "@/src/services/cars/cars.service";
+import type {
+  PartnerCar,
+  PartnerCarPayload,
+  PartnerCarStatus,
+} from "@/src/services/cars/cars.types";
 
 type CarForm = PartnerCarPayload;
 
@@ -155,8 +156,8 @@ export default function AdminCarsPage() {
     setLoading(true);
     try {
       const [carsResponse, branchesResponse] = await Promise.all([
-        rentFlowPartnerApi.getCars(),
-        rentFlowPartnerApi.getBranches(),
+        carsService.getCars(),
+        branchesService.getBranches(),
       ]);
       setCars(carsResponse.items);
       setBranches(branchesResponse.items);
@@ -221,11 +222,11 @@ export default function AdminCarsPage() {
     try {
       setSaving(true);
       const savedCar = selectedCar
-        ? await rentFlowPartnerApi.updateCar(selectedCar.id, form)
-        : await rentFlowPartnerApi.createCar(form);
+        ? await carsService.updateCar(selectedCar.id, form)
+        : await carsService.createCar(form);
 
       if (imageFiles.length > 0) {
-        await rentFlowPartnerApi.uploadCarImages(savedCar.id, imageFiles, {
+        await carsService.uploadCarImages(savedCar.id, imageFiles, {
           replace: true,
         });
       }
@@ -253,7 +254,7 @@ export default function AdminCarsPage() {
     if (!window.confirm(`ต้องการลบรถ "${car.name}" ใช่หรือไม่`)) return;
 
     try {
-      await rentFlowPartnerApi.deleteCar(car.id);
+      await carsService.deleteCar(car.id);
       setSnack({ open: true, message: "ลบรถสำเร็จ", severity: "info" });
       await loadData();
     } catch (error: unknown) {
@@ -279,9 +280,9 @@ export default function AdminCarsPage() {
     if (!window.confirm("ต้องการลบรูปนี้ใช่หรือไม่")) return;
 
     try {
-      await rentFlowPartnerApi.deleteCarImage(selectedCar.id, imageId);
+      await carsService.deleteCarImage(selectedCar.id, imageId);
       setSnack({ open: true, message: "ลบรูปภาพสำเร็จ", severity: "info" });
-      const response = await rentFlowPartnerApi.getCars();
+      const response = await carsService.getCars();
       setCars(response.items);
       const freshCar =
         response.items.find((item) => item.id === selectedCar.id) || null;
@@ -309,7 +310,7 @@ export default function AdminCarsPage() {
     const imageIds = nextImages.map(imageIdFromUrl).filter(Boolean);
 
     try {
-      await rentFlowPartnerApi.reorderCarImages(selectedCar.id, imageIds);
+      await carsService.reorderCarImages(selectedCar.id, imageIds);
       setSelectedCar({ ...selectedCar, images: nextImages, imageUrl: nextImages[0], image: nextImages[0] });
       setCars((prev) =>
         prev.map((car) =>

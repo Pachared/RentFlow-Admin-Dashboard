@@ -16,20 +16,28 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import {
-  rentFlowPartnerApi,
-  type PartnerAddon,
-  type PartnerAuditLog,
-  type PartnerAvailabilityBlock,
-  type PartnerBooking,
-  type PartnerCustomer,
-  type PartnerDashboard,
-  type PartnerDomain,
-  type PartnerLead,
-  type PartnerMember,
-  type PartnerPayment,
-  type PartnerPromotion,
-} from "@/src/lib/rentflow-api";
+import { addonsService } from "@/src/services/addons/addons.service";
+import type { PartnerAddon } from "@/src/services/addons/addons.types";
+import { auditService } from "@/src/services/audit/audit.service";
+import type { PartnerAuditLog } from "@/src/services/audit/audit.types";
+import { bookingsService } from "@/src/services/bookings/bookings.service";
+import type { PartnerBooking } from "@/src/services/bookings/bookings.types";
+import { calendarService } from "@/src/services/calendar/calendar.service";
+import type { PartnerAvailabilityBlock } from "@/src/services/calendar/calendar.types";
+import { customersService } from "@/src/services/customers/customers.service";
+import type { PartnerCustomer } from "@/src/services/customers/customers.types";
+import type { PartnerDashboard } from "@/src/services/dashboard/dashboard.types";
+import { domainsService } from "@/src/services/domains/domains.service";
+import type { PartnerDomain } from "@/src/services/domains/domains.types";
+import { leadsService } from "@/src/services/leads/leads.service";
+import type { PartnerLead } from "@/src/services/leads/leads.types";
+import { membersService } from "@/src/services/members/members.service";
+import type { PartnerMember } from "@/src/services/members/members.types";
+import { paymentsService } from "@/src/services/payments/payments.service";
+import type { PartnerPayment } from "@/src/services/payments/payments.types";
+import { promotionsService } from "@/src/services/promotions/promotions.service";
+import type { PartnerPromotion } from "@/src/services/promotions/promotions.types";
+import { reportsService } from "@/src/services/reports/reports.service";
 
 type Snack = {
   open: boolean;
@@ -146,7 +154,7 @@ export function PartnerBookingsPage() {
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const response = await rentFlowPartnerApi.getBookings(status);
+      const response = await bookingsService.getBookings(status);
       setItems(response.items);
     } catch (error: unknown) {
       setSnack({ open: true, message: error instanceof Error ? error.message : "โหลดการจองไม่สำเร็จ", severity: "error" });
@@ -161,7 +169,7 @@ export function PartnerBookingsPage() {
 
   async function updateStatus(booking: PartnerBooking, nextStatus: string) {
     try {
-      await rentFlowPartnerApi.updateBookingStatus(booking.id, nextStatus);
+      await bookingsService.updateBookingStatus(booking.id, nextStatus);
       setSnack({ open: true, message: "อัปเดตการจองสำเร็จ", severity: "success" });
       load();
     } catch (error: unknown) {
@@ -227,7 +235,7 @@ export function PartnerPaymentsPage({ verificationOnly = false }: { verification
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const response = await rentFlowPartnerApi.getPayments();
+      const response = await paymentsService.getPayments();
       setItems(verificationOnly ? response.items.filter((item) => item.status !== "paid" || !item.verifiedAt) : response.items);
     } catch (error: unknown) {
       setSnack({ open: true, message: error instanceof Error ? error.message : "โหลดการชำระเงินไม่สำเร็จ", severity: "error" });
@@ -266,9 +274,9 @@ export function PartnerPaymentsPage({ verificationOnly = false }: { verification
                     <Typography className="text-xs text-slate-500">สถานะจ่าย: {payment.status} • payout: {payment.payoutStatus || "pending"} • refund: {payment.refundStatus || "none"}</Typography>
                   </Box>
                   <Stack direction={{ xs: "column", sm: "row" }} spacing={1} className="w-full md:w-auto">
-                    <Button variant="outlined" onClick={() => runAction(() => rentFlowPartnerApi.verifyPayment(payment.id, payment.slipUrl), "ยืนยันชำระเงินแล้ว")}>ยืนยัน</Button>
-                    <Button variant="outlined" onClick={() => runAction(() => rentFlowPartnerApi.settlePayment(payment.id), "ปิดยอดเข้าร้านแล้ว")}>ปิดยอด</Button>
-                    <Button color="error" variant="outlined" onClick={() => runAction(() => rentFlowPartnerApi.refundPayment(payment.id, payment.amount), "คืนเงินแล้ว")}>คืนเงิน</Button>
+                    <Button variant="outlined" onClick={() => runAction(() => paymentsService.verifyPayment(payment.id, payment.slipUrl), "ยืนยันชำระเงินแล้ว")}>ยืนยัน</Button>
+                    <Button variant="outlined" onClick={() => runAction(() => paymentsService.settlePayment(payment.id), "ปิดยอดเข้าร้านแล้ว")}>ปิดยอด</Button>
+                    <Button color="error" variant="outlined" onClick={() => runAction(() => paymentsService.refundPayment(payment.id, payment.amount), "คืนเงินแล้ว")}>คืนเงิน</Button>
                   </Stack>
                 </Stack>
                 {index < items.length - 1 ? <Divider /> : null}
@@ -287,7 +295,7 @@ export function PartnerCustomersPage() {
   const [loading, setLoading] = React.useState(true);
   const { snack, setSnack, close } = useSnack();
   React.useEffect(() => {
-    rentFlowPartnerApi.getCustomers().then((response) => setItems(response.items)).catch((error: unknown) => setSnack({ open: true, message: error instanceof Error ? error.message : "โหลดลูกค้าไม่สำเร็จ", severity: "error" })).finally(() => setLoading(false));
+    customersService.getCustomers().then((response) => setItems(response.items)).catch((error: unknown) => setSnack({ open: true, message: error instanceof Error ? error.message : "โหลดลูกค้าไม่สำเร็จ", severity: "error" })).finally(() => setLoading(false));
   }, [setSnack]);
   return (
     <Box className="grid gap-4">
@@ -321,7 +329,7 @@ export function PartnerReportsPage() {
   const [loading, setLoading] = React.useState(true);
   const { snack, setSnack, close } = useSnack();
   React.useEffect(() => {
-    rentFlowPartnerApi.getReports().then(setReport).catch((error: unknown) => setSnack({ open: true, message: error instanceof Error ? error.message : "โหลดรายงานไม่สำเร็จ", severity: "error" })).finally(() => setLoading(false));
+    reportsService.getReports().then(setReport).catch((error: unknown) => setSnack({ open: true, message: error instanceof Error ? error.message : "โหลดรายงานไม่สำเร็จ", severity: "error" })).finally(() => setLoading(false));
   }, [setSnack]);
   if (loading) return <LoadingCard />;
   return (
@@ -363,7 +371,7 @@ export function PartnerCalendarPage() {
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const response = await rentFlowPartnerApi.getCalendar();
+      const response = await calendarService.getCalendar();
       setBookings(response.bookings);
       setBlocks(response.blocks);
     } catch (error: unknown) {
@@ -375,7 +383,7 @@ export function PartnerCalendarPage() {
   React.useEffect(() => { load(); }, [load]);
   async function createBlock() {
     try {
-      await rentFlowPartnerApi.createAvailabilityBlock({ startDate, endDate, reason });
+      await calendarService.createAvailabilityBlock({ startDate, endDate, reason });
       setSnack({ open: true, message: "เพิ่มวันปิดรับจองแล้ว", severity: "success" });
       load();
     } catch (error: unknown) {
@@ -399,7 +407,7 @@ export function PartnerCalendarPage() {
       {loading ? <LoadingCard /> : (
         <Box className="grid gap-4 xl:grid-cols-2">
           <ListCard title="รายการจอง" empty="ยังไม่มีรายการจอง" items={bookings.map((booking) => ({ id: booking.id, title: `${booking.bookingCode} • ${booking.customerName}`, subtitle: `${booking.carName || booking.carId} • ${formatDate(booking.pickupDate)} - ${formatDate(booking.returnDate)}`, right: bookingStatusLabel(booking.status) }))} />
-          <ListCard title="วันปิดรับจอง" empty="ยังไม่มีวันปิดรับจอง" items={blocks.map((block) => ({ id: block.id, title: block.reason, subtitle: `${formatDate(block.startDate)} - ${formatDate(block.endDate)}`, right: "ลบ", onClick: async () => { await rentFlowPartnerApi.deleteAvailabilityBlock(block.id); load(); } }))} />
+          <ListCard title="วันปิดรับจอง" empty="ยังไม่มีวันปิดรับจอง" items={blocks.map((block) => ({ id: block.id, title: block.reason, subtitle: `${formatDate(block.startDate)} - ${formatDate(block.endDate)}`, right: "ลบ", onClick: async () => { await calendarService.deleteAvailabilityBlock(block.id); load(); } }))} />
         </Box>
       )}
       <PageSnack snack={snack} onClose={close} />
@@ -419,15 +427,15 @@ function ListCard({ title, empty, items }: { title: string; empty: string; items
 }
 
 export function PartnerPromotionsPage() {
-  return <CrudPage<PartnerPromotion> title="โปรโมชัน" description="จัดการคูปองและส่วนลด" load={rentFlowPartnerApi.listPromotions} create={rentFlowPartnerApi.createPromotion} update={rentFlowPartnerApi.updatePromotion} remove={rentFlowPartnerApi.deletePromotion} defaults={{ code: "", name: "", description: "", discountType: "percent", discountValue: 0, isActive: true }} fields={["code", "name", "description", "discountType", "discountValue"]} />;
+  return <CrudPage<PartnerPromotion> title="โปรโมชัน" description="จัดการคูปองและส่วนลด" load={promotionsService.listPromotions} create={promotionsService.createPromotion} update={promotionsService.updatePromotion} remove={promotionsService.deletePromotion} defaults={{ code: "", name: "", description: "", discountType: "percent", discountValue: 0, isActive: true }} fields={["code", "name", "description", "discountType", "discountValue"]} />;
 }
 
 export function PartnerAddonsPage() {
-  return <CrudPage<PartnerAddon> title="บริการเสริม" description="จัดการอุปกรณ์หรือบริการที่คิดเงินเพิ่ม" load={rentFlowPartnerApi.listAddons} create={rentFlowPartnerApi.createAddon} update={rentFlowPartnerApi.updateAddon} remove={rentFlowPartnerApi.deleteAddon} defaults={{ name: "", description: "", price: 0, unit: "day", isActive: true }} fields={["name", "description", "price", "unit"]} />;
+  return <CrudPage<PartnerAddon> title="บริการเสริม" description="จัดการอุปกรณ์หรือบริการที่คิดเงินเพิ่ม" load={addonsService.listAddons} create={addonsService.createAddon} update={addonsService.updateAddon} remove={addonsService.deleteAddon} defaults={{ name: "", description: "", price: 0, unit: "day", isActive: true }} fields={["name", "description", "price", "unit"]} />;
 }
 
 export function PartnerLeadsPage() {
-  return <CrudPage<PartnerLead> title="ลีด" description="ติดตามลูกค้าที่สนใจเช่ารถ" load={rentFlowPartnerApi.listLeads} create={rentFlowPartnerApi.createLead} update={rentFlowPartnerApi.updateLead} remove={rentFlowPartnerApi.deleteLead} defaults={{ name: "", email: "", phone: "", source: "", status: "new", interestedCar: "", note: "" }} fields={["name", "email", "phone", "source", "status", "interestedCar", "note"]} />;
+  return <CrudPage<PartnerLead> title="ลีด" description="ติดตามลูกค้าที่สนใจเช่ารถ" load={leadsService.listLeads} create={leadsService.createLead} update={leadsService.updateLead} remove={leadsService.deleteLead} defaults={{ name: "", email: "", phone: "", source: "", status: "new", interestedCar: "", note: "" }} fields={["name", "email", "phone", "source", "status", "interestedCar", "note"]} />;
 }
 
 type CrudBase = { id: string; name?: string; code?: string; isActive?: boolean };
@@ -495,9 +503,9 @@ export function PartnerSettingsProductionPage() {
     setLoading(true);
     try {
       const [domainData, memberData, auditData] = await Promise.all([
-        rentFlowPartnerApi.listDomains(),
-        rentFlowPartnerApi.listMembers(),
-        rentFlowPartnerApi.listAuditLogs(),
+        domainsService.listDomains(),
+        membersService.listMembers(),
+        auditService.listAuditLogs(),
       ]);
       setDomains(domainData.items);
       setMembers(memberData.items);
@@ -510,17 +518,17 @@ export function PartnerSettingsProductionPage() {
   }, [setSnack]);
   React.useEffect(() => { load(); }, [load]);
   async function addDomain() {
-    try { await rentFlowPartnerApi.createDomain(domain); setDomain(""); load(); } catch (error: unknown) { setSnack({ open: true, message: error instanceof Error ? error.message : "เพิ่มโดเมนไม่สำเร็จ", severity: "error" }); }
+    try { await domainsService.createDomain(domain); setDomain(""); load(); } catch (error: unknown) { setSnack({ open: true, message: error instanceof Error ? error.message : "เพิ่มโดเมนไม่สำเร็จ", severity: "error" }); }
   }
   async function addMember() {
-    try { await rentFlowPartnerApi.createMember({ email: memberEmail, role: memberRole }); setMemberEmail(""); load(); } catch (error: unknown) { setSnack({ open: true, message: error instanceof Error ? error.message : "เพิ่มทีมไม่สำเร็จ", severity: "error" }); }
+    try { await membersService.createMember({ email: memberEmail, role: memberRole }); setMemberEmail(""); load(); } catch (error: unknown) { setSnack({ open: true, message: error instanceof Error ? error.message : "เพิ่มทีมไม่สำเร็จ", severity: "error" }); }
   }
   return (
     <Box className="grid gap-4">
       <SectionHeader title="ตั้งค่าระบบร้าน" description="จัดการ custom domain, team roles และ audit log" />
       {loading ? <LoadingCard /> : (
         <Box className="grid gap-4 xl:grid-cols-3">
-          <Card elevation={0} className="rounded-2xl! border border-slate-200 bg-white"><CardContent><Typography className="font-black">Custom domains</Typography><Stack direction="row" spacing={1} className="my-3"><TextField label="domain.com" value={domain} onChange={(e) => setDomain(e.target.value)} fullWidth /><Button onClick={addDomain}>เพิ่ม</Button></Stack><Stack divider={<Divider />}>{domains.map((item) => <Box key={item.id} className="py-2"><Typography className="font-bold">{item.domain}</Typography><Typography className="text-xs text-slate-500">{item.status} • TXT: {item.verificationTxt}</Typography><Button size="small" onClick={() => rentFlowPartnerApi.verifyDomain(item.id).then(load)}>ยืนยัน</Button></Box>)}</Stack></CardContent></Card>
+          <Card elevation={0} className="rounded-2xl! border border-slate-200 bg-white"><CardContent><Typography className="font-black">Custom domains</Typography><Stack direction="row" spacing={1} className="my-3"><TextField label="domain.com" value={domain} onChange={(e) => setDomain(e.target.value)} fullWidth /><Button onClick={addDomain}>เพิ่ม</Button></Stack><Stack divider={<Divider />}>{domains.map((item) => <Box key={item.id} className="py-2"><Typography className="font-bold">{item.domain}</Typography><Typography className="text-xs text-slate-500">{item.status} • TXT: {item.verificationTxt}</Typography><Button size="small" onClick={() => domainsService.verifyDomain(item.id).then(load)}>ยืนยัน</Button></Box>)}</Stack></CardContent></Card>
           <Card elevation={0} className="rounded-2xl! border border-slate-200 bg-white"><CardContent><Typography className="font-black">ทีมและสิทธิ์</Typography><Stack direction="row" spacing={1} className="my-3"><TextField label="อีเมล" value={memberEmail} onChange={(e) => setMemberEmail(e.target.value)} fullWidth /><TextField select label="Role" value={memberRole} onChange={(e) => setMemberRole(e.target.value as PartnerMember["role"])}><MenuItem value="staff">staff</MenuItem><MenuItem value="finance">finance</MenuItem><MenuItem value="owner">owner</MenuItem></TextField><Button onClick={addMember}>เพิ่ม</Button></Stack><Stack divider={<Divider />}>{members.map((item) => <Box key={item.id} className="py-2"><Typography className="font-bold">{item.email}</Typography><Typography className="text-xs text-slate-500">{item.role} • {item.status}</Typography></Box>)}</Stack></CardContent></Card>
           <Card elevation={0} className="rounded-2xl! border border-slate-200 bg-white"><CardContent><Typography className="font-black">Audit logs</Typography><Stack divider={<Divider />} className="mt-3">{logs.map((item) => <Box key={item.id} className="py-2"><Typography className="font-bold">{item.action}</Typography><Typography className="text-xs text-slate-500">{item.actorEmail || "-"} • {formatDate(item.createdAt)}</Typography></Box>)}</Stack></CardContent></Card>
         </Box>

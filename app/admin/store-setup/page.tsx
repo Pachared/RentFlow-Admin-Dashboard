@@ -29,10 +29,8 @@ import {
     validateDomainSlug,
     writeStoreProfile,
 } from "@/src/lib/partner-store";
-import {
-    RentFlowApiError,
-    rentFlowPartnerApi,
-} from "@/src/lib/rentflow-api";
+import { RentFlowApiError } from "@/src/services/core/api-client.service";
+import { tenantService } from "@/src/services/tenant/tenant.service";
 
 export default function StoreSetupPage() {
     const router = useRouter();
@@ -52,7 +50,7 @@ export default function StoreSetupPage() {
             setDomainSlug(profile.domainSlug);
         }
 
-        rentFlowPartnerApi
+        tenantService
             .getMyTenant()
             .then((tenant) => {
                 if (!active) return;
@@ -117,7 +115,7 @@ export default function StoreSetupPage() {
 
         try {
             setSaving(true);
-            const tenant = await rentFlowPartnerApi.saveMyTenant({
+            const tenant = await tenantService.saveMyTenant({
                 shopName,
                 domainSlug: normalizedSlug,
             });

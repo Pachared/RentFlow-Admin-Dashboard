@@ -27,10 +27,8 @@ import QuizRoundedIcon from "@mui/icons-material/QuizRounded";
 import SettingsEthernetRoundedIcon from "@mui/icons-material/SettingsEthernetRounded";
 import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
 
-import {
-  rentFlowPartnerApi,
-  type PartnerLineConnection,
-} from "@/src/lib/rentflow-api";
+import { lineService } from "@/src/services/line/line.service";
+import type { PartnerLineConnection } from "@/src/services/line/line.types";
 
 type Snack = {
   open: boolean;
@@ -147,7 +145,7 @@ export function PartnerLineMessagingPage() {
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const data = await rentFlowPartnerApi.getLineMessaging();
+      const data = await lineService.getLineMessaging();
       setConnection(data);
       setPreview(null);
       setForm({
@@ -203,7 +201,7 @@ export function PartnerLineMessagingPage() {
 
     setSaving(true);
     try {
-      const saved = await rentFlowPartnerApi.saveLineMessaging({
+      const saved = await lineService.saveLineMessaging({
         channelId: form.channelId.trim(),
         channelSecret: form.channelSecret.trim(),
         accessToken: form.accessToken.trim(),
@@ -230,7 +228,7 @@ export function PartnerLineMessagingPage() {
   async function verifyConnection() {
     setTesting(true);
     try {
-      const result = await rentFlowPartnerApi.testLineMessaging(credentialsPayload());
+      const result = await lineService.testLineMessaging(credentialsPayload());
       if (hasUnsavedInput) {
         setPreview(result.connection);
       } else {
@@ -252,7 +250,7 @@ export function PartnerLineMessagingPage() {
   async function verifyWebhook() {
     setTestingWebhook(true);
     try {
-      const result = await rentFlowPartnerApi.testLineWebhook({
+      const result = await lineService.testLineWebhook({
         ...credentialsPayload(),
         endpoint: webhookUrl || undefined,
       });
@@ -285,7 +283,7 @@ export function PartnerLineMessagingPage() {
       return;
     }
     try {
-      await rentFlowPartnerApi.deleteLineMessaging();
+      await lineService.deleteLineMessaging();
       await load();
       setSnack({ open: true, message: "ลบการเชื่อมต่อ LINE OA แล้ว", severity: "success" });
     } catch (error: unknown) {

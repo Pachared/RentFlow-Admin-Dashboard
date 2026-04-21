@@ -20,11 +20,11 @@ import NotesRoundedIcon from "@mui/icons-material/NotesRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 
-import {
-  rentFlowPartnerApi,
-  type PartnerSupportOwner,
-  type PartnerSupportTicket,
-} from "@/src/lib/rentflow-api";
+import { supportService } from "@/src/services/support/support.service";
+import type {
+  PartnerSupportOwner,
+  PartnerSupportTicket,
+} from "@/src/services/support/support.types";
 
 type Snack = {
   open: boolean;
@@ -102,7 +102,7 @@ export function PartnerSupportPage() {
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const response = await rentFlowPartnerApi.getSupportTickets();
+      const response = await supportService.getSupportTickets();
       setTickets(response.items);
       setOwners(response.owners);
       setSelectedId((prev) => {
@@ -156,7 +156,7 @@ export function PartnerSupportPage() {
     message: string
   ) {
     try {
-      await rentFlowPartnerApi.updateSupportTicket(ticketId, input);
+      await supportService.updateSupportTicket(ticketId, input);
       await load();
       setSnack({ open: true, message, severity: "success" });
     } catch (error: unknown) {
@@ -172,7 +172,7 @@ export function PartnerSupportPage() {
     if (!selectedTicket || !reply.trim()) return;
     setSavingReply(true);
     try {
-      await rentFlowPartnerApi.createSupportMessage(selectedTicket.id, {
+      await supportService.createSupportMessage(selectedTicket.id, {
         message: reply.trim(),
       });
       setReply("");
@@ -193,7 +193,7 @@ export function PartnerSupportPage() {
     if (!selectedTicket || !note.trim()) return;
     setSavingNote(true);
     try {
-      await rentFlowPartnerApi.createSupportMessage(selectedTicket.id, {
+      await supportService.createSupportMessage(selectedTicket.id, {
         message: note.trim(),
         isInternal: true,
       });

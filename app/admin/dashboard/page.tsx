@@ -21,10 +21,8 @@ import ForumRoundedIcon from "@mui/icons-material/ForumRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
-import {
-  rentFlowPartnerApi,
-  type PartnerDashboard,
-} from "@/src/lib/rentflow-api";
+import { dashboardService } from "@/src/services/dashboard/dashboard.service";
+import type { PartnerDashboard } from "@/src/services/dashboard/dashboard.types";
 
 function formatTHB(value: number) {
   return `${new Intl.NumberFormat("th-TH", {
@@ -100,7 +98,7 @@ export default function AdminDashboardPage() {
       try {
         setLoading(true);
         setError("");
-        const data = await rentFlowPartnerApi.getDashboard();
+        const data = await dashboardService.getDashboard();
         if (active) setDashboard(data);
       } catch (err: unknown) {
         if (!active) return;
