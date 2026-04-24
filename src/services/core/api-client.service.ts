@@ -14,43 +14,10 @@ function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
 }
 
-function isLocalApiHost(hostname: string) {
-  const normalized = hostname.trim().toLowerCase().replace(/\.$/, "");
-  return (
-    normalized === "localhost" ||
-    normalized === "127.0.0.1" ||
-    normalized === "::1"
-  );
-}
-
 export function getPartnerApiBaseUrl() {
-  const fallback = trimTrailingSlash(
+  return trimTrailingSlash(
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
   );
-
-  if (typeof window === "undefined") {
-    return fallback;
-  }
-
-  try {
-    const resolved = new URL(fallback);
-    const currentHostname = window.location.hostname
-      .trim()
-      .toLowerCase()
-      .replace(/\.$/, "");
-
-    if (
-      isLocalApiHost(resolved.hostname) &&
-      currentHostname.endsWith(".localhost")
-    ) {
-      resolved.hostname = currentHostname;
-      return trimTrailingSlash(resolved.toString());
-    }
-  } catch {
-    return fallback;
-  }
-
-  return fallback;
 }
 
 export function resolvePartnerAssetUrl(value?: string | null) {
@@ -79,8 +46,17 @@ export async function requestPartner<T>(
   init?: RequestInit
 ): Promise<T> {
   const headers = new Headers(init?.headers);
+  const body = init?.body;
   const isFormData =
-    typeof FormData !== "undefined" && init?.body instanceof FormData;
+    !!body &&
+    typeof body === "object" &&
+    ((typeof FormData !== "undefined" && body instanceof FormData) ||
+      (Object.prototype.toString.call(body) === "[object FormData]" &&
+        typeof (body as FormData).append === "function"));
+
+  if (isFormData) {
+    headers.delete("Content-Type");
+  }
 
   if (!isFormData && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");

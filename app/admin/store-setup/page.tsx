@@ -27,12 +27,15 @@ import { RentFlowApiError } from "@/src/services/core/api-client.service";
 import { tenantService } from "@/src/services/tenant/tenant.service";
 
 export default function StoreSetupPage() {
+    const maxPromoImages = 8;
     const [shopName, setShopName] = React.useState("");
     const [domainSlug, setDomainSlug] = React.useState("");
     const [logoUrl, setLogoUrl] = React.useState("");
-    const [promoImageUrl, setPromoImageUrl] = React.useState("");
+    const [promoImageUrls, setPromoImageUrls] = React.useState<string[]>([]);
+    const [logoFile, setLogoFile] = React.useState<File | null>(null);
+    const [promoImageFiles, setPromoImageFiles] = React.useState<File[]>([]);
     const [logoChanged, setLogoChanged] = React.useState(false);
-    const [promoImageChanged, setPromoImageChanged] = React.useState(false);
+    const [promoImagesChanged, setPromoImagesChanged] = React.useState(false);
     const [snackbarOpen, setSnackbarOpen] = React.useState(false);
     const [snackbarMessage, setSnackbarMessage] = React.useState(
         "กรุณากรอกชื่อร้านและชื่อโดเมนให้ถูกต้อง"
@@ -46,7 +49,7 @@ export default function StoreSetupPage() {
             setShopName(profile.shopName);
             setDomainSlug(profile.domainSlug);
             setLogoUrl(profile.logoUrl || "");
-            setPromoImageUrl(profile.promoImageUrl || "");
+            setPromoImageUrls(profile.promoImageUrls?.length ? profile.promoImageUrls : profile.promoImageUrl ? [profile.promoImageUrl] : []);
         }
 
         tenantService
@@ -61,17 +64,30 @@ export default function StoreSetupPage() {
                     ownerEmail: tenant.ownerEmail,
                     status: tenant.status,
                     plan: tenant.plan,
-                    logoUrl: tenant.logoUrl ?? profile?.logoUrl,
-                    promoImageUrl: tenant.promoImageUrl ?? profile?.promoImageUrl,
+                    logoUrl: tenant.logoUrl || profile?.logoUrl,
+                    promoImageUrl: tenant.promoImageUrl || profile?.promoImageUrl,
+                    promoImageUrls: tenant.promoImageUrls?.length ? tenant.promoImageUrls : profile?.promoImageUrls,
                     createdAt: tenant.createdAt,
                     updatedAt: tenant.updatedAt,
                 });
                 setShopName(tenant.shopName);
                 setDomainSlug(tenant.domainSlug);
-                setLogoUrl(tenant.logoUrl ?? profile?.logoUrl ?? "");
-                setPromoImageUrl(tenant.promoImageUrl ?? profile?.promoImageUrl ?? "");
+                setLogoUrl(tenant.logoUrl || profile?.logoUrl || "");
+                setPromoImageUrls(
+                    tenant.promoImageUrls?.length
+                        ? tenant.promoImageUrls
+                        : tenant.promoImageUrl
+                          ? [tenant.promoImageUrl]
+                          : profile?.promoImageUrls?.length
+                            ? profile.promoImageUrls
+                            : profile?.promoImageUrl
+                              ? [profile.promoImageUrl]
+                              : []
+                );
+                setLogoFile(null);
+                setPromoImageFiles([]);
                 setLogoChanged(false);
-                setPromoImageChanged(false);
+                setPromoImagesChanged(false);
             })
             .catch((error: unknown) => {
                 if (
@@ -114,7 +130,7 @@ export default function StoreSetupPage() {
         options: {
             maxSize: number;
             maxSizeLabel: string;
-            onLoad: (value: string) => void;
+            onLoad: (value: string, file: File) => void;
         }
     ) {
         const file = event.target.files?.[0];
@@ -136,7 +152,7 @@ export default function StoreSetupPage() {
         const reader = new FileReader();
         reader.onload = () => {
             if (typeof reader.result === "string") {
-                options.onLoad(reader.result);
+                options.onLoad(reader.result, file);
             }
         };
         reader.onerror = () => {
@@ -146,24 +162,102 @@ export default function StoreSetupPage() {
         reader.readAsDataURL(file);
     }
 
+    function readImageFiles(
+        event: React.ChangeEvent<HTMLInputElement>,
+        options: {
+            maxSize: number;
+            maxSizeLabel: string;
+            maxFiles: number;
+            onLoad: (values: string[], files: File[]) => void;
+        }
+    ) {
+        const files = Array.from(event.target.files || []);
+        event.target.value = "";
+        if (!files.length) return;
+
+        if (files.length > options.maxFiles) {
+            setSnackbarMessage(`เลือกรูปได้ไม่เกิน ${options.maxFiles} รูปต่อครั้ง`);
+            setSnackbarOpen(true);
+            return;
+        }
+
+        const invalidFile = files.find((file) => !file.type.startsWith("image/"));
+        if (invalidFile) {
+            setSnackbarMessage("กรุณาเลือกไฟล์รูปภาพเท่านั้น");
+            setSnackbarOpen(true);
+            return;
+        }
+
+        const oversizeFile = files.find((file) => file.size > options.maxSize);
+        if (oversizeFile) {
+            setSnackbarMessage(`ไฟล์รูปภาพแต่ละรูปควรมีขนาดไม่เกิน ${options.maxSizeLabel}`);
+            setSnackbarOpen(true);
+            return;
+        }
+
+        Promise.all(
+            files.map(
+                (file) =>
+                    new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            if (typeof reader.result === "string") {
+                                resolve(reader.result);
+                                return;
+                            }
+                            reject(new Error("ไม่สามารถอ่านไฟล์รูปภาพได้"));
+                        };
+                        reader.onerror = () => reject(new Error("ไม่สามารถอ่านไฟล์รูปภาพได้"));
+                        reader.readAsDataURL(file);
+                    })
+            )
+        )
+            .then((values) => options.onLoad(values, files))
+            .catch((error: unknown) => {
+                setSnackbarMessage(
+                    error instanceof Error ? error.message : "ไม่สามารถอ่านไฟล์รูปภาพได้"
+                );
+                setSnackbarOpen(true);
+            });
+    }
+
     function handleLogoChange(event: React.ChangeEvent<HTMLInputElement>) {
         readImageFile(event, {
             maxSize: 5 * 1024 * 1024,
             maxSizeLabel: "5 เมกะไบต์",
-            onLoad: (value) => {
+            onLoad: (value, file) => {
                 setLogoUrl(value);
+                setLogoFile(file);
                 setLogoChanged(true);
             },
         });
     }
 
-    function handlePromoImageChange(event: React.ChangeEvent<HTMLInputElement>) {
-        readImageFile(event, {
+    function handlePromoImagesChange(event: React.ChangeEvent<HTMLInputElement>) {
+        readImageFiles(event, {
             maxSize: 5 * 1024 * 1024,
             maxSizeLabel: "5 เมกะไบต์",
-            onLoad: (value) => {
-                setPromoImageUrl(value);
-                setPromoImageChanged(true);
+            maxFiles: maxPromoImages,
+            onLoad: (values, files) => {
+                const remainingSlots = Math.max(maxPromoImages - promoImageUrls.length, 0);
+                if (remainingSlots <= 0) {
+                    setSnackbarMessage(`เก็บรูปโปรโมชันได้สูงสุด ${maxPromoImages} รูป`);
+                    setSnackbarOpen(true);
+                    return;
+                }
+                if (values.length > remainingSlots) {
+                    setSnackbarMessage(`เพิ่มได้อีก ${remainingSlots} รูปเท่านั้น`);
+                    setSnackbarOpen(true);
+                }
+                setPromoImageUrls((current) => [
+                    ...current,
+                    ...values.slice(0, remainingSlots),
+                ]);
+                setPromoImageFiles((current) => [
+                    ...current,
+                    ...files.slice(0, remainingSlots),
+                ]);
+                setPromoImagesChanged(true);
             },
         });
     }
@@ -180,13 +274,35 @@ export default function StoreSetupPage() {
         try {
             setSaving(true);
             const currentLogoUrl = logoUrl.trim();
-            const currentPromoImageUrl = promoImageUrl.trim();
+            const currentPromoImageUrls = promoImageUrls.map((url) => url.trim()).filter(Boolean);
+            const existingPromoImageUrls = currentPromoImageUrls.filter(
+                (url) => !url.startsWith("data:") && !url.startsWith("blob:")
+            );
             const tenant = await tenantService.saveMyTenant({
                 shopName,
                 domainSlug: normalizedSlug,
-                ...(logoChanged ? { logoUrl: currentLogoUrl } : {}),
-                ...(promoImageChanged ? { promoImageUrl: currentPromoImageUrl } : {}),
+                ...(logoChanged
+                    ? {
+                        logoUrl: currentLogoUrl,
+                        logoFile,
+                    }
+                    : {}),
+                ...(promoImagesChanged
+                    ? {
+                        promoImageUrl: existingPromoImageUrls[0] || null,
+                        promoImageUrls: existingPromoImageUrls,
+                        promoImageFiles,
+                        clearPromoImages: currentPromoImageUrls.length === 0,
+                    }
+                    : {}),
             });
+            const nextLogoUrl = tenant.logoUrl || currentLogoUrl || "";
+            const nextPromoImageUrls =
+                tenant.promoImageUrls?.length
+                    ? tenant.promoImageUrls
+                    : tenant.promoImageUrl
+                      ? [tenant.promoImageUrl]
+                      : currentPromoImageUrls;
             writeStoreProfile({
                 tenantId: tenant.id,
                 shopName: tenant.shopName,
@@ -195,15 +311,18 @@ export default function StoreSetupPage() {
                 ownerEmail: tenant.ownerEmail,
                 status: tenant.status,
                 plan: tenant.plan,
-                logoUrl: tenant.logoUrl ?? (currentLogoUrl || null),
-                promoImageUrl: tenant.promoImageUrl ?? (currentPromoImageUrl || null),
+                logoUrl: nextLogoUrl || null,
+                promoImageUrl: nextPromoImageUrls[0] || null,
+                promoImageUrls: nextPromoImageUrls,
                 createdAt: tenant.createdAt,
                 updatedAt: tenant.updatedAt,
             });
-            setLogoUrl(tenant.logoUrl ?? (currentLogoUrl || ""));
-            setPromoImageUrl(tenant.promoImageUrl ?? (currentPromoImageUrl || ""));
+            setLogoUrl(nextLogoUrl);
+            setPromoImageUrls(nextPromoImageUrls);
+            setLogoFile(null);
+            setPromoImageFiles([]);
             setLogoChanged(false);
-            setPromoImageChanged(false);
+            setPromoImagesChanged(false);
             setSnackbarMessage("บันทึกข้อมูลร้านเรียบร้อยแล้ว");
             setSnackbarOpen(true);
         } catch (error: unknown) {
@@ -300,6 +419,7 @@ export default function StoreSetupPage() {
                                                     className="rounded-full!"
                                                     onClick={() => {
                                                         setLogoUrl("");
+                                                        setLogoFile(null);
                                                         setLogoChanged(true);
                                                     }}
                                                 >
@@ -314,13 +434,25 @@ export default function StoreSetupPage() {
                             <Box className="rounded-[30px] border border-slate-200 bg-slate-50 p-4 md:p-5">
                                 <Stack spacing={2.5}>
                                     <Box className="overflow-hidden rounded-[28px] bg-white">
-                                        {promoImageUrl ? (
-                                            <Box
-                                                component="img"
-                                                src={promoImageUrl}
-                                                alt="รูปโปรโมชันหน้าร้าน"
-                                                className="h-56 w-full object-cover md:h-72"
-                                            />
+                                        {promoImageUrls.length ? (
+                                            <Box className="grid gap-3 p-3 sm:grid-cols-2">
+                                                {promoImageUrls.map((imageUrl, index) => (
+                                                    <Box
+                                                        key={`${imageUrl}-${index}`}
+                                                        className="relative overflow-hidden rounded-[22px] bg-slate-100"
+                                                    >
+                                                        <Box
+                                                            component="img"
+                                                            src={imageUrl}
+                                                            alt={`รูปโปรโมชันหน้าร้าน ${index + 1}`}
+                                                            className="h-44 w-full object-cover md:h-52"
+                                                        />
+                                                        <Box className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-slate-700 shadow-sm">
+                                                            รูปที่ {index + 1}
+                                                        </Box>
+                                                    </Box>
+                                                ))}
+                                            </Box>
                                         ) : (
                                             <Box className="grid h-56 place-items-center px-6 text-center text-slate-500 md:h-72">
                                                 ยังไม่มีรูปโปรโมชันหน้าร้าน
@@ -333,7 +465,7 @@ export default function StoreSetupPage() {
                                             รูปโปรโมชันหน้าร้าน
                                         </Typography>
                                         <Typography className="text-[0.92rem] leading-7 text-slate-500 md:text-[0.97rem]">
-                                            ใช้เป็นภาพใหญ่หน้าแรกของ URL ร้าน เช่น รูปโปรโมชัน แคมเปญ หรือภาพบรรยากาศร้าน
+                                            เลือกได้หลายรูป ระบบจะเลื่อนโชว์บนหน้าแรกของร้านโดยอัตโนมัติ
                                         </Typography>
                                     </Box>
 
@@ -350,21 +482,23 @@ export default function StoreSetupPage() {
                                             <input
                                                 hidden
                                                 type="file"
+                                                multiple
                                                 accept="image/png,image/jpeg,image/webp"
-                                                onChange={handlePromoImageChange}
+                                                onChange={handlePromoImagesChange}
                                             />
                                         </Button>
-                                        {promoImageUrl ? (
+                                        {promoImageUrls.length ? (
                                             <Button
                                                 variant="text"
                                                 color="error"
                                                 className="rounded-full!"
                                                 onClick={() => {
-                                                    setPromoImageUrl("");
-                                                    setPromoImageChanged(true);
+                                                    setPromoImageUrls([]);
+                                                    setPromoImageFiles([]);
+                                                    setPromoImagesChanged(true);
                                                 }}
                                             >
-                                                ลบรูปโปรโมชัน
+                                                ลบรูปโปรโมชันทั้งหมด
                                             </Button>
                                         ) : null}
                                     </Stack>

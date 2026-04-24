@@ -6,6 +6,7 @@ export type PartnerTenant = {
   publicDomain: string;
   logoUrl?: string;
   promoImageUrl?: string;
+  promoImageUrls?: string[];
   status: string;
   plan: string;
   createdAt?: string;

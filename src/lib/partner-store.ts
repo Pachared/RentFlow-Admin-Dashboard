@@ -30,6 +30,7 @@ export type PartnerStoreProfile = {
     plan?: string;
     logoUrl?: string;
     promoImageUrl?: string;
+    promoImageUrls?: string[];
     createdAt: string;
     updatedAt: string;
 };
@@ -79,6 +80,9 @@ export function readStoreProfile() {
             ...parsed,
             logoUrl: resolvePartnerAssetUrl(parsed.logoUrl),
             promoImageUrl: resolvePartnerAssetUrl(parsed.promoImageUrl),
+            promoImageUrls: (parsed.promoImageUrls || [])
+                .map((url) => resolvePartnerAssetUrl(url))
+                .filter(Boolean) as string[],
         };
     } catch {
         return null;
@@ -95,6 +99,7 @@ export function writeStoreProfile(input: {
     plan?: string;
     logoUrl?: string | null;
     promoImageUrl?: string | null;
+    promoImageUrls?: string[] | null;
     createdAt?: string;
     updatedAt?: string;
 }) {
@@ -119,6 +124,12 @@ export function writeStoreProfile(input: {
                 ? existing?.promoImageUrl
                 : input.promoImageUrl || undefined
         ),
+        promoImageUrls:
+            input.promoImageUrls === undefined
+                ? existing?.promoImageUrls || []
+                : (input.promoImageUrls || [])
+                      .map((url) => resolvePartnerAssetUrl(url))
+                      .filter(Boolean) as string[],
         createdAt: input.createdAt ?? existing?.createdAt ?? now,
         updatedAt: input.updatedAt ?? now,
     };
