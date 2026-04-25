@@ -1,5 +1,5 @@
 import { requestPartner } from "../core/api-client.service";
-import type { PartnerMember } from "./members.types";
+import type { PartnerMember, PartnerMemberInput } from "./members.types";
 
 export const membersService = {
   listMembers() {
@@ -8,14 +8,14 @@ export const membersService = {
     );
   },
 
-  createMember(input: Omit<PartnerMember, "id" | "status">) {
+  createMember(input: PartnerMemberInput) {
     return requestPartner<PartnerMember>("/partner/members", {
       method: "POST",
       body: JSON.stringify(input),
     });
   },
 
-  updateMember(id: string, input: Omit<PartnerMember, "id">) {
+  updateMember(id: string, input: PartnerMemberInput) {
     return requestPartner<null>(`/partner/members/${encodeURIComponent(id)}`, {
       method: "PATCH",
       body: JSON.stringify(input),

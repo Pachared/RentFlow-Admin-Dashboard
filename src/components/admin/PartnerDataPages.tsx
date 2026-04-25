@@ -9,6 +9,10 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   MenuItem,
   Snackbar,
@@ -110,10 +114,22 @@ function roleLabel(role?: string) {
   const labels: Record<string, string> = {
     owner: "เจ้าของร้าน",
     finance: "การเงิน",
+    support: "ดูแลลูกค้า",
     staff: "พนักงาน",
   };
   return labels[role || ""] || role || "-";
 }
+
+const PARTNER_PERMISSION_OPTIONS = [
+  { key: "cars.write", label: "จัดการรถ" },
+  { key: "branches.write", label: "จัดการสาขา" },
+  { key: "bookings.write", label: "จัดการจอง" },
+  { key: "payments.write", label: "จัดการชำระเงิน" },
+  { key: "customers.read", label: "ดูลูกค้า" },
+  { key: "reports.read", label: "ดูรายงาน" },
+  { key: "support.write", label: "ตอบลูกค้า" },
+  { key: "audit.read", label: "ดูประวัติ" },
+] as const;
 
 function paymentMethodLabel(method?: string) {
   const labels: Record<string, string> = {
@@ -300,6 +316,16 @@ export function PartnerBookingsPage() {
   const [items, setItems] = React.useState<PartnerBooking[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [status, setStatus] = React.useState("all");
+  const [operationDraft, setOperationDraft] = React.useState<{
+    booking: PartnerBooking;
+    type: "inspection" | "handover" | "return" | "damage" | "fine" | "note";
+    odometer: string;
+    fuelLevel: string;
+    damageNote: string;
+    fineAmount: string;
+    staffNote: string;
+    checklistText: string;
+  } | null>(null);
   const { snack, setSnack, close } = useSnack();
 
   const load = React.useCallback(async () => {
@@ -333,21 +359,41 @@ export function PartnerBookingsPage() {
     }
   }
 
-  async function createOperation(booking: PartnerBooking, type: "inspection" | "handover" | "return" | "damage" | "fine" | "note") {
+  function openOperation(booking: PartnerBooking, type: "inspection" | "handover" | "return" | "damage" | "fine" | "note") {
+    const checklist =
+      type === "handover"
+        ? ["ตรวจเอกสารผู้เช่า", "ตรวจสภาพรถก่อนส่งมอบ", "บันทึกเลขไมล์"]
+        : type === "return"
+          ? ["ตรวจสภาพรถหลังคืน", "ตรวจน้ำมัน", "ยืนยันคืนรถเรียบร้อย"]
+          : ["บันทึกเหตุการณ์"];
+    setOperationDraft({
+      booking,
+      type,
+      odometer: "",
+      fuelLevel: "",
+      damageNote: "",
+      fineAmount: "",
+      staffNote: "",
+      checklistText: checklist.join("\n"),
+    });
+  }
+
+  async function createOperation() {
+    if (!operationDraft) return;
     try {
-      await bookingsService.createBookingOperation(booking.id, {
-        type,
-        checklist:
-          type === "handover"
-            ? ["ตรวจเอกสารผู้เช่า", "ตรวจสภาพรถก่อนส่งมอบ", "บันทึกเลขไมล์"]
-            : type === "return"
-              ? ["ตรวจสภาพรถหลังคืน", "ตรวจน้ำมัน", "ยืนยันคืนรถเรียบร้อย"]
-              : ["บันทึกเหตุการณ์"],
-        staffNote:
-          type === "damage"
-            ? "พบรายการที่ต้องตรวจสอบเพิ่มเติม"
-            : "",
+      await bookingsService.createBookingOperation(operationDraft.booking.id, {
+        type: operationDraft.type,
+        checklist: operationDraft.checklistText
+          .split("\n")
+          .map((item) => item.trim())
+          .filter(Boolean),
+        odometer: Number(operationDraft.odometer || 0),
+        fuelLevel: operationDraft.fuelLevel,
+        damageNote: operationDraft.damageNote,
+        fineAmount: Number(operationDraft.fineAmount || 0),
+        staffNote: operationDraft.staffNote,
       });
+      setOperationDraft(null);
       setSnack({ open: true, message: "บันทึกงานรถสำเร็จ", severity: "success" });
       load();
     } catch (error: unknown) {
@@ -402,16 +448,16 @@ export function PartnerBookingsPage() {
                   </Stack>
                 </Stack>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1} className="px-4 pb-4">
-                  <Button variant="outlined" onClick={() => createOperation(booking, "inspection")} className="rounded-full!">
+                  <Button variant="outlined" onClick={() => openOperation(booking, "inspection")} className="rounded-full!">
                     ตรวจรถ
                   </Button>
-                  <Button variant="outlined" onClick={() => createOperation(booking, "handover")} className="rounded-full!">
+                  <Button variant="outlined" onClick={() => openOperation(booking, "handover")} className="rounded-full!">
                     ส่งมอบรถ
                   </Button>
-                  <Button variant="outlined" onClick={() => createOperation(booking, "return")} className="rounded-full!">
+                  <Button variant="outlined" onClick={() => openOperation(booking, "return")} className="rounded-full!">
                     รับคืนรถ
                   </Button>
-                  <Button variant="outlined" color="warning" onClick={() => createOperation(booking, "damage")} className="rounded-full!">
+                  <Button variant="outlined" color="warning" onClick={() => openOperation(booking, "damage")} className="rounded-full!">
                     บันทึกความเสียหาย
                   </Button>
                 </Stack>
@@ -421,6 +467,68 @@ export function PartnerBookingsPage() {
           </CardContent>
         </Card>
       )}
+      <Dialog open={!!operationDraft} onClose={() => setOperationDraft(null)} fullWidth maxWidth="sm">
+        <DialogTitle className="font-black!">
+          บันทึกงานรถ
+        </DialogTitle>
+        <DialogContent className="grid gap-3! pt-2!">
+          <Typography className="text-sm text-slate-500">
+            {operationDraft?.booking.bookingCode} • {operationDraft?.booking.carName || operationDraft?.booking.carId}
+          </Typography>
+          <TextField
+            label="เช็กลิสต์"
+            multiline
+            minRows={4}
+            value={operationDraft?.checklistText || ""}
+            onChange={(e) => setOperationDraft((prev) => prev ? { ...prev, checklistText: e.target.value } : prev)}
+            fullWidth
+          />
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+            <TextField
+              label="เลขไมล์"
+              type="number"
+              value={operationDraft?.odometer || ""}
+              onChange={(e) => setOperationDraft((prev) => prev ? { ...prev, odometer: e.target.value } : prev)}
+              fullWidth
+            />
+            <TextField
+              label="ระดับน้ำมัน"
+              value={operationDraft?.fuelLevel || ""}
+              onChange={(e) => setOperationDraft((prev) => prev ? { ...prev, fuelLevel: e.target.value } : prev)}
+              fullWidth
+            />
+          </Stack>
+          <TextField
+            label="บันทึกความเสียหาย"
+            value={operationDraft?.damageNote || ""}
+            onChange={(e) => setOperationDraft((prev) => prev ? { ...prev, damageNote: e.target.value } : prev)}
+            fullWidth
+          />
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+            <TextField
+              label="ค่าปรับ"
+              type="number"
+              value={operationDraft?.fineAmount || ""}
+              onChange={(e) => setOperationDraft((prev) => prev ? { ...prev, fineAmount: e.target.value } : prev)}
+              fullWidth
+            />
+            <TextField
+              label="หมายเหตุทีมงาน"
+              value={operationDraft?.staffNote || ""}
+              onChange={(e) => setOperationDraft((prev) => prev ? { ...prev, staffNote: e.target.value } : prev)}
+              fullWidth
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions className="px-6! pb-5!">
+          <Button variant="outlined" onClick={() => setOperationDraft(null)}>
+            ยกเลิก
+          </Button>
+          <Button variant="contained" onClick={createOperation}>
+            บันทึก
+          </Button>
+        </DialogActions>
+      </Dialog>
       <PageSnack snack={snack} onClose={close} />
     </Box>
   );
@@ -784,7 +892,13 @@ export function PartnerSettingsProductionPage() {
   const [logs, setLogs] = React.useState<PartnerAuditLog[]>([]);
   const [domain, setDomain] = React.useState("");
   const [memberEmail, setMemberEmail] = React.useState("");
+  const [memberName, setMemberName] = React.useState("");
   const [memberRole, setMemberRole] = React.useState<PartnerMember["role"]>("staff");
+  const [memberPermissions, setMemberPermissions] = React.useState<string[]>([
+    "cars.write",
+    "branches.write",
+    "bookings.write",
+  ]);
   const [loading, setLoading] = React.useState(true);
   const { snack, setSnack, close } = useSnack();
   const load = React.useCallback(async () => {
@@ -809,7 +923,41 @@ export function PartnerSettingsProductionPage() {
     try { await domainsService.createDomain(domain); setDomain(""); load(); } catch (error: unknown) { setSnack({ open: true, message: error instanceof Error ? error.message : "เพิ่มโดเมนไม่สำเร็จ", severity: "error" }); }
   }
   async function addMember() {
-    try { await membersService.createMember({ email: memberEmail, role: memberRole }); setMemberEmail(""); load(); } catch (error: unknown) { setSnack({ open: true, message: error instanceof Error ? error.message : "เพิ่มทีมไม่สำเร็จ", severity: "error" }); }
+    try {
+      await membersService.createMember({
+        email: memberEmail,
+        name: memberName,
+        role: memberRole,
+        permissions: memberRole === "owner" ? ["*"] : memberPermissions,
+      });
+      setMemberEmail("");
+      setMemberName("");
+      load();
+    } catch (error: unknown) {
+      setSnack({ open: true, message: error instanceof Error ? error.message : "เพิ่มทีมไม่สำเร็จ", severity: "error" });
+    }
+  }
+  function toggleMemberPermission(permission: string) {
+    setMemberPermissions((current) =>
+      current.includes(permission)
+        ? current.filter((item) => item !== permission)
+        : [...current, permission]
+    );
+  }
+  async function updateMemberStatus(member: PartnerMember, status: string) {
+    try {
+      await membersService.updateMember(member.id, {
+        email: member.email,
+        name: member.name,
+        role: member.role,
+        permissions: member.permissions || [],
+        status,
+      });
+      setSnack({ open: true, message: "อัปเดตทีมสำเร็จ", severity: "success" });
+      load();
+    } catch (error: unknown) {
+      setSnack({ open: true, message: error instanceof Error ? error.message : "อัปเดตทีมไม่สำเร็จ", severity: "error" });
+    }
   }
   return (
     <Box className="grid gap-4">
@@ -861,7 +1009,7 @@ export function PartnerSettingsProductionPage() {
           <Card elevation={0} className="partner-card rounded-[30px]!">
             <CardContent className="p-5!">
               <Typography className="partner-section-title">ทีมและสิทธิ์</Typography>
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1} className="my-4">
+              <Stack spacing={1.5} className="my-4">
                 <TextField
                   label="อีเมล"
                   value={memberEmail}
@@ -869,17 +1017,44 @@ export function PartnerSettingsProductionPage() {
                   fullWidth
                 />
                 <TextField
-                  select
-                  label="สิทธิ์"
-                  value={memberRole}
-                  onChange={(e) => setMemberRole(e.target.value as PartnerMember["role"])}
-                  className="sm:min-w-36"
-                >
-                  <MenuItem value="staff">พนักงาน</MenuItem>
-                  <MenuItem value="finance">การเงิน</MenuItem>
-                  <MenuItem value="owner">เจ้าของร้าน</MenuItem>
-                </TextField>
-                <Button onClick={addMember}>เพิ่ม</Button>
+                  label="ชื่อทีมงาน"
+                  value={memberName}
+                  onChange={(e) => setMemberName(e.target.value)}
+                  fullWidth
+                />
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                  <TextField
+                    select
+                    label="บทบาท"
+                    value={memberRole}
+                    onChange={(e) => setMemberRole(e.target.value as PartnerMember["role"])}
+                    fullWidth
+                  >
+                    <MenuItem value="staff">พนักงาน</MenuItem>
+                    <MenuItem value="support">ดูแลลูกค้า</MenuItem>
+                    <MenuItem value="finance">การเงิน</MenuItem>
+                    <MenuItem value="owner">เจ้าของร้าน</MenuItem>
+                  </TextField>
+                  <Button onClick={addMember}>เพิ่ม</Button>
+                </Stack>
+                {memberRole !== "owner" ? (
+                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                    {PARTNER_PERMISSION_OPTIONS.map((permission) => {
+                      const active = memberPermissions.includes(permission.key);
+                      return (
+                        <Button
+                          key={permission.key}
+                          size="small"
+                          variant={active ? "contained" : "outlined"}
+                          onClick={() => toggleMemberPermission(permission.key)}
+                          className="rounded-full!"
+                        >
+                          {permission.label}
+                        </Button>
+                      );
+                    })}
+                  </Stack>
+                ) : null}
               </Stack>
               <Stack divider={<Divider />}>
                 {members.map((item) => (
@@ -888,6 +1063,29 @@ export function PartnerSettingsProductionPage() {
                     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" className="mt-2">
                       <Chip label={roleLabel(item.role)} className="partner-chip partner-chip-blue" />
                       <Chip label={statusLabel(item.status)} className={statusChipClass(item.status)} />
+                      {(item.permissions || []).slice(0, 6).map((permission) => (
+                        <Chip key={`${item.id}-${permission}`} label={permission === "*" ? "ทุกสิทธิ์" : permission} className="partner-chip" />
+                      ))}
+                    </Stack>
+                    <Stack direction="row" spacing={1} className="mt-3">
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => updateMemberStatus(item, item.status === "active" ? "inactive" : "active")}
+                      >
+                        {item.status === "active" ? "ปิดใช้งาน" : "เปิดใช้งาน"}
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        variant="outlined"
+                        onClick={async () => {
+                          await membersService.deleteMember(item.id);
+                          load();
+                        }}
+                      >
+                        ลบ
+                      </Button>
                     </Stack>
                   </Box>
                 ))}
