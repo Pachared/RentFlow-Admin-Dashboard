@@ -137,7 +137,7 @@ const theme = createTheme({
         root: {
           borderRadius: 999,
           fontWeight: 800,
-          minHeight: 35,
+          minHeight: 46,
           border: 0,
           backgroundColor: "#eef1f5",
           color: "#667085",

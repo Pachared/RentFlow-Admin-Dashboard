@@ -13,6 +13,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { usePartnerRealtimeRefresh } from "@/src/hooks/realtime/usePartnerRealtimeRefresh";
 import { dashboardService } from "@/src/services/dashboard/dashboard.service";
 import type { PartnerDashboard } from "@/src/services/dashboard/dashboard.types";
 
@@ -90,6 +91,25 @@ export default function PartnerDashboardPage() {
   );
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
+  const [reloadTick, setReloadTick] = React.useState(0);
+
+  const refreshFromRealtime = React.useCallback(() => {
+    setReloadTick((current) => current + 1);
+  }, []);
+
+  usePartnerRealtimeRefresh({
+    events: [
+      "booking.created",
+      "booking.updated",
+      "booking.cancelled",
+      "payment.created",
+      "payment.updated",
+      "car.changed",
+      "availability.changed",
+      "support.changed",
+    ],
+    onRefresh: refreshFromRealtime,
+  });
 
   React.useEffect(() => {
     let active = true;
@@ -114,7 +134,7 @@ export default function PartnerDashboardPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [reloadTick]);
 
   if (loading) {
     return (

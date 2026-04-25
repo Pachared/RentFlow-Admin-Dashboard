@@ -33,6 +33,7 @@ import { leadsService } from "@/src/services/leads/leads.service";
 import type { PartnerLead } from "@/src/services/leads/leads.types";
 import { membersService } from "@/src/services/members/members.service";
 import type { PartnerMember } from "@/src/services/members/members.types";
+import { usePartnerRealtimeRefresh } from "@/src/hooks/realtime/usePartnerRealtimeRefresh";
 import { paymentsService } from "@/src/services/payments/payments.service";
 import type { PartnerPayment } from "@/src/services/payments/payments.types";
 import { promotionsService } from "@/src/services/promotions/promotions.service";
@@ -315,6 +316,11 @@ export function PartnerBookingsPage() {
     load();
   }, [load]);
 
+  usePartnerRealtimeRefresh({
+    events: ["booking.created", "booking.updated", "booking.cancelled"],
+    onRefresh: load,
+  });
+
   async function updateStatus(booking: PartnerBooking, nextStatus: string) {
     try {
       await bookingsService.updateBookingStatus(booking.id, nextStatus);
@@ -398,6 +404,11 @@ export function PartnerPaymentsPage({ verificationOnly = false }: { verification
   React.useEffect(() => {
     load();
   }, [load]);
+
+  usePartnerRealtimeRefresh({
+    events: ["payment.created", "payment.updated", "booking.updated"],
+    onRefresh: load,
+  });
 
   async function runAction(action: () => Promise<unknown>, message: string) {
     try {
@@ -547,6 +558,15 @@ export function PartnerCalendarPage() {
     }
   }, [setSnack]);
   React.useEffect(() => { load(); }, [load]);
+  usePartnerRealtimeRefresh({
+    events: [
+      "booking.created",
+      "booking.updated",
+      "booking.cancelled",
+      "availability.changed",
+    ],
+    onRefresh: load,
+  });
   async function createBlock() {
     try {
       await calendarService.createAvailabilityBlock({ startDate, endDate, reason });

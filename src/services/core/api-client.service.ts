@@ -61,6 +61,7 @@ export async function requestPartner<T>(
   if (!isFormData && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
+  headers.set("X-RentFlow-App", "partner");
 
   const response = await fetch(`${getPartnerApiBaseUrl()}${path}`, {
     ...init,

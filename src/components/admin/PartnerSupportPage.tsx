@@ -16,6 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 
+import { usePartnerRealtimeRefresh } from "@/src/hooks/realtime/usePartnerRealtimeRefresh";
 import { supportService } from "@/src/services/support/support.service";
 import type {
   PartnerSupportOwner,
@@ -135,6 +136,11 @@ export function PartnerSupportPage() {
   React.useEffect(() => {
     load();
   }, [load]);
+
+  usePartnerRealtimeRefresh({
+    events: ["support.changed"],
+    onRefresh: load,
+  });
 
   const filteredTickets = React.useMemo(() => {
     const query = q.trim().toLowerCase();

@@ -1,4 +1,5 @@
 import { resolvePartnerAssetUrl } from "@/src/services/core/api-client.service";
+import { readClientCookie, writeClientCookie } from "./client-cookie";
 
 export const PARTNER_STORE_KEY = "rentflow_partner_store";
 export const PARTNER_STORE_COOKIE = "rf_store_domain";
@@ -71,7 +72,7 @@ export function validateDomainSlug(domainSlug: string) {
 export function readStoreProfile() {
     if (typeof window === "undefined") return null;
 
-    const raw = window.localStorage.getItem(PARTNER_STORE_KEY);
+    const raw = readClientCookie(PARTNER_STORE_KEY);
     if (!raw) return null;
 
     try {
@@ -134,10 +135,14 @@ export function writeStoreProfile(input: {
         updatedAt: input.updatedAt ?? now,
     };
 
-    window.localStorage.setItem(PARTNER_STORE_KEY, JSON.stringify(profile));
-    document.cookie = `${PARTNER_STORE_COOKIE}=${encodeURIComponent(
-        profile.storefrontDomain
-    )}; path=/; max-age=${60 * 60 * 24 * 365}`;
+    writeClientCookie(PARTNER_STORE_KEY, JSON.stringify(profile), {
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "Strict",
+    });
+    writeClientCookie(PARTNER_STORE_COOKIE, profile.storefrontDomain, {
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "Strict",
+    });
     window.dispatchEvent(new Event("rentflow-store-profile-updated"));
 
     return profile;

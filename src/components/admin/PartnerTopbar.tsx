@@ -20,9 +20,11 @@ import {
   readStoreProfile,
   type PartnerStoreProfile,
 } from "@/src/lib/partner-store";
+import { deleteClientCookie } from "@/src/lib/client-cookie";
 import { authService } from "@/src/services/auth/auth.service";
 
-const TOKEN_COOKIE = "rentflow_session";
+const SESSION_COOKIE = "rentflow_partner_session";
+const LEGACY_SESSION_COOKIE = "rentflow_session";
 
 type Props = {
   onOpenMobile: () => void;
@@ -83,7 +85,8 @@ export default function PartnerTopbar({
 
   async function logout() {
     await authService.logout().catch(() => null);
-    document.cookie = `${TOKEN_COOKIE}=; path=/; max-age=0`;
+    deleteClientCookie(SESSION_COOKIE);
+    deleteClientCookie(LEGACY_SESSION_COOKIE);
     router.replace("/login");
   }
 

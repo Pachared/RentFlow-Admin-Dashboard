@@ -1,4 +1,5 @@
 export type PartnerCarStatus = "available" | "rented" | "maintenance" | "hidden";
+export type PartnerCarAvailabilityStatus = PartnerCarStatus | "booked";
 
 export type PartnerCar = {
   id: string;
@@ -12,9 +13,13 @@ export type PartnerCar = {
   transmission: string;
   fuel: string;
   pricePerDay: number;
+  unitCount?: number;
+  reservedUnits?: number;
+  availableUnits?: number;
   description?: string;
   locationId?: string;
   status: PartnerCarStatus;
+  availabilityStatus?: PartnerCarAvailabilityStatus;
   isAvailable: boolean;
   image?: string;
   imageUrl?: string;
@@ -33,6 +38,7 @@ export type PartnerCarPayload = {
   transmission: string;
   fuel: string;
   pricePerDay: number;
+  unitCount: number;
   description?: string;
   locationId?: string;
   status: PartnerCarStatus;

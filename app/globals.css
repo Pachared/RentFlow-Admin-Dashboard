@@ -276,13 +276,13 @@ a {
   border: 0 !important;
   background: var(--rf-partner-chip) !important;
   color: var(--rf-partner-muted) !important;
-  min-height: 2.2rem !important;
+  min-height: 2.85rem !important;
   box-shadow: none !important;
   white-space: nowrap !important;
 }
 
 .MuiChip-root .MuiChip-label {
-  padding-inline: 0.95rem !important;
+  padding-inline: 1.1rem !important;
   white-space: nowrap !important;
   line-height: 1.1 !important;
 }
@@ -336,6 +336,14 @@ a {
 .MuiOutlinedInput-root {
   border-radius: 22px !important;
   background: #ffffff !important;
+  min-height: 2.85rem !important;
+}
+
+.MuiOutlinedInput-root .MuiInputBase-input,
+.MuiOutlinedInput-root .MuiSelect-select {
+  min-height: 1.2rem !important;
+  padding-top: 0.8rem !important;
+  padding-bottom: 0.8rem !important;
 }
 
 .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {

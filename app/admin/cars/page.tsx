@@ -22,9 +22,11 @@ import type { PartnerBranch } from "@/src/services/branches/branches.types";
 import { carsService } from "@/src/services/cars/cars.service";
 import type {
   PartnerCar,
+  PartnerCarAvailabilityStatus,
   PartnerCarPayload,
   PartnerCarStatus,
 } from "@/src/services/cars/cars.types";
+import { usePartnerRealtimeRefresh } from "@/src/hooks/realtime/usePartnerRealtimeRefresh";
 
 type CarForm = PartnerCarPayload;
 
@@ -38,13 +40,14 @@ const emptyForm: CarForm = {
   transmission: "Auto",
   fuel: "Gasoline",
   pricePerDay: 0,
+  unitCount: 1,
   description: "",
   locationId: "",
   status: "available",
 };
 
 const statusMeta: Record<
-  PartnerCarStatus,
+  PartnerCarAvailabilityStatus,
   { label: string; className: string }
 > = {
   available: {
@@ -62,6 +65,10 @@ const statusMeta: Record<
   hidden: {
     label: "ซ่อน",
     className: "partner-chip",
+  },
+  booked: {
+    label: "ถูกจองแล้ว",
+    className: "partner-chip partner-chip-orange",
   },
 };
 
@@ -109,6 +116,7 @@ function buildFormFromCar(car: PartnerCar): CarForm {
     transmission: car.transmission,
     fuel: car.fuel,
     pricePerDay: car.pricePerDay,
+    unitCount: Math.max(car.unitCount || 1, 1),
     description: car.description || "",
     locationId: car.locationId || "",
     status: car.status || "available",
@@ -126,7 +134,7 @@ function imageIdFromUrl(value: string) {
   }
 }
 
-function StatusChip({ status }: { status: PartnerCarStatus }) {
+function StatusChip({ status }: { status: PartnerCarAvailabilityStatus }) {
   const meta = statusMeta[status] || statusMeta.available;
   return <Chip label={meta.label} className={meta.className} />;
 }
@@ -141,7 +149,7 @@ export default function PartnerCarsPage() {
   const [form, setForm] = React.useState<CarForm>(emptyForm);
   const [imageFiles, setImageFiles] = React.useState<File[]>([]);
   const [q, setQ] = React.useState("");
-  const [status, setStatus] = React.useState<PartnerCarStatus | "all">("all");
+  const [status, setStatus] = React.useState<PartnerCarAvailabilityStatus | "all">("all");
   const [snack, setSnack] = React.useState<{
     open: boolean;
     message: string;
@@ -173,6 +181,18 @@ export default function PartnerCarsPage() {
     loadData();
   }, [loadData]);
 
+  usePartnerRealtimeRefresh({
+    events: [
+      "booking.created",
+      "booking.updated",
+      "booking.cancelled",
+      "car.changed",
+      "availability.changed",
+      "branch.changed",
+    ],
+    onRefresh: loadData,
+  });
+
   const filteredCars = React.useMemo(() => {
     const keyword = q.trim().toLowerCase();
     return cars.filter((car) => {
@@ -182,7 +202,8 @@ export default function PartnerCarsPage() {
         car.name.toLowerCase().includes(keyword) ||
         car.brand.toLowerCase().includes(keyword) ||
         car.model.toLowerCase().includes(keyword);
-      const matchesStatus = status === "all" || car.status === status;
+      const displayStatus = car.availabilityStatus || car.status;
+      const matchesStatus = status === "all" || displayStatus === status;
       return matchesKeyword && matchesStatus;
     });
   }, [cars, q, status]);
@@ -356,12 +377,13 @@ export default function PartnerCarsPage() {
             label="สถานะ"
             value={status}
             onChange={(event) =>
-              setStatus(event.target.value as PartnerCarStatus | "all")
+              setStatus(event.target.value as PartnerCarAvailabilityStatus | "all")
             }
             className="w-full sm:w-44"
           >
             <MenuItem value="all">ทั้งหมด</MenuItem>
             <MenuItem value="available">พร้อมให้เช่า</MenuItem>
+            <MenuItem value="booked">ถูกจองแล้ว</MenuItem>
             <MenuItem value="rented">ถูกเช่าอยู่</MenuItem>
             <MenuItem value="maintenance">ซ่อมบำรุง</MenuItem>
             <MenuItem value="hidden">ซ่อน</MenuItem>
@@ -420,7 +442,7 @@ export default function PartnerCarsPage() {
                           <Typography className="text-xs font-bold uppercase tracking-wide text-slate-400">
                             {car.id}
                           </Typography>
-                          <StatusChip status={car.status} />
+                          <StatusChip status={car.availabilityStatus || car.status} />
                         </Stack>
                         <Typography className="mt-2 text-lg font-black text-slate-950">
                           {car.name}
@@ -430,6 +452,12 @@ export default function PartnerCarsPage() {
                         </Typography>
                         <Typography className="mt-1 text-sm text-slate-600">
                           {car.seats} ที่นั่ง • {transmissionLabel[car.transmission] || car.transmission} • {fuelLabel[car.fuel] || car.fuel}
+                        </Typography>
+                        <Typography className="mt-1 text-sm text-slate-600">
+                          รถทั้งหมด {Math.max(car.unitCount || 1, 1)} คัน
+                          {typeof car.availableUnits === "number"
+                            ? ` • พร้อมให้เช่า ${Math.max(car.availableUnits, 0)} คัน`
+                            : ""}
                         </Typography>
                         <Typography className="mt-3 text-xl font-black text-slate-950">
                           {formatTHB(car.pricePerDay)} / วัน
@@ -488,6 +516,7 @@ export default function PartnerCarsPage() {
               <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                 <TextField label="ปี" type="number" value={form.year} onChange={(e) => updateForm("year", Number(e.target.value))} fullWidth />
                 <TextField label="ราคา/วัน" type="number" value={form.pricePerDay} onChange={(e) => updateForm("pricePerDay", Number(e.target.value))} fullWidth />
+                <TextField label="จำนวนรถรุ่นนี้" type="number" value={form.unitCount} onChange={(e) => updateForm("unitCount", Math.max(Number(e.target.value), 1))} fullWidth />
               </Stack>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                 <TextField select label="ประเภทรถ" value={form.type} onChange={(e) => updateForm("type", e.target.value)} fullWidth>

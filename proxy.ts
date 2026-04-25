@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const TOKEN_COOKIE = "rentflow_session";
+const TOKEN_COOKIE = "rentflow_partner_session";
 const STORE_COOKIE = "rf_store_domain";
 const STORE_SETUP_PATH = "/admin/store-setup";
 
