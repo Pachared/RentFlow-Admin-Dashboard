@@ -349,7 +349,6 @@ export default function StoreSetupPage() {
     return (
         <Box className="partner-page mx-auto max-w-6xl">
             <Box className="partner-page-header">
-                <Box className="partner-page-kicker">ตั้งค่าร้าน</Box>
                 <Typography className="partner-page-title">
                     ตั้งค่าหน้าร้านให้พร้อมใช้งาน
                 </Typography>

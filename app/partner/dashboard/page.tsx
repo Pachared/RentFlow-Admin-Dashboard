@@ -171,6 +171,13 @@ export default function PartnerDashboardPage() {
 
   return (
     <Box className="partner-page">
+      <Box className="partner-page-header">
+        <Typography className="partner-page-title">ภาพรวมร้าน</Typography>
+        <Typography className="partner-page-subtitle">
+          ติดตามรถ สาขา การจอง รายได้ และรีวิวล่าสุด เพื่อให้เห็นสถานะร้านของคุณในภาพเดียว
+        </Typography>
+      </Box>
+
       <Box className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="รถทั้งหมด"
@@ -203,7 +210,6 @@ export default function PartnerDashboardPage() {
                   รายได้ 7 วันล่าสุด
                 </Typography>
               </Box>
-              <Box className="partner-page-kicker">รายได้</Box>
             </Stack>
             <Stack spacing={2.25} className="mt-5">
               {dashboard.weeklySales.map((row) => (
@@ -274,7 +280,6 @@ export default function PartnerDashboardPage() {
               <Typography className="partner-section-title text-slate-950">
                 การจองล่าสุด
               </Typography>
-              <Box className="partner-page-kicker">ล่าสุด</Box>
             </Stack>
             <Stack divider={<Divider />} className="mt-3">
               {dashboard.recentBookings.length ? (
@@ -322,7 +327,6 @@ export default function PartnerDashboardPage() {
               <Typography className="partner-section-title text-slate-950">
                 รถทำรายได้สูงสุด
               </Typography>
-              <Box className="partner-page-kicker">รายได้สูงสุด</Box>
             </Stack>
             <Stack spacing={2} className="mt-5">
               {dashboard.topCars.length ? (
@@ -352,7 +356,6 @@ export default function PartnerDashboardPage() {
             <Typography className="partner-section-title text-slate-950">
               รีวิวล่าสุด
             </Typography>
-            <Box className="partner-page-kicker">รีวิว</Box>
           </Stack>
           <Stack divider={<Divider />} className="mt-3">
             {dashboard.recentReviews.length ? (

@@ -251,15 +251,15 @@ function SectionHeader({
     <Stack
       direction={{ xs: "column", md: "row" }}
       spacing={2}
-      className="items-start justify-between md:items-center"
+      className="partner-page-header partner-page-header-with-action items-start justify-between md:items-end"
     >
       <Box>
-        <Typography variant="h6" className="partner-section-title">
+        <Typography className="partner-page-title">
           {title}
         </Typography>
-        <Typography className="partner-section-subtitle">{description}</Typography>
+        <Typography className="partner-page-subtitle">{description}</Typography>
       </Box>
-      {action}
+      {action ? <Box className="partner-header-action">{action}</Box> : null}
     </Stack>
   );
 }
@@ -403,7 +403,7 @@ export function PartnerBookingsPage() {
   }
 
   return (
-    <Box className="grid gap-4">
+    <Box className="partner-page">
       <SectionHeader
         title="การจอง"
         description="ดูและจัดการสถานะการจองของร้านในที่เดียว"
@@ -572,7 +572,7 @@ export function PartnerPaymentsPage({ verificationOnly = false }: { verification
   }
 
   return (
-    <Box className="grid gap-4">
+    <Box className="partner-page">
       <SectionHeader title={verificationOnly ? "ตรวจสอบการชำระเงิน" : "การชำระเงิน"} description="จัดการตรวจสลิป คืนเงิน และปิดยอดเข้าร้าน" />
       {loading ? <LoadingCard /> : (
         <Card elevation={0} className="partner-card rounded-[30px]!">
@@ -626,7 +626,7 @@ export function PartnerCustomersPage() {
     customersService.getCustomers().then((response) => setItems(response.items)).catch((error: unknown) => setSnack({ open: true, message: error instanceof Error ? error.message : "โหลดลูกค้าไม่สำเร็จ", severity: "error" })).finally(() => setLoading(false));
   }, [setSnack]);
   return (
-    <Box className="grid gap-4">
+    <Box className="partner-page">
       <SectionHeader title="ลูกค้า" description="รวมลูกค้าจากประวัติการจองจริงของร้าน" />
       {loading ? <LoadingCard /> : (
         <Card elevation={0} className="partner-card rounded-[30px]!">
@@ -661,7 +661,7 @@ export function PartnerReportsPage() {
   }, [setSnack]);
   if (loading) return <LoadingCard />;
   return (
-    <Box className="grid gap-4">
+    <Box className="partner-page">
       <SectionHeader title="รายงาน" description="สรุปยอดขาย การจอง รถ สาขา และรีวิวของร้าน" />
       {report ? (
         <Box className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -729,7 +729,7 @@ export function PartnerCalendarPage() {
     }
   }
   return (
-    <Box className="grid gap-4">
+    <Box className="partner-page">
       <SectionHeader title="ปฏิทิน" description="ดูตารางจองและปิดช่วงวันที่ร้านไม่ว่าง" />
       <Card elevation={0} className="partner-card rounded-[30px]!">
         <CardContent>
@@ -826,7 +826,7 @@ function CrudPage<T extends CrudBase>({
     }
   }
   return (
-    <Box className="grid gap-4">
+    <Box className="partner-page">
       <SectionHeader title={title} description={description} />
       <Card elevation={0} className="partner-card rounded-[30px]!">
         <CardContent className="p-5!">
@@ -969,7 +969,7 @@ export function PartnerSettingsProductionPage() {
     }
   }
   return (
-    <Box className="grid gap-4">
+    <Box className="partner-page">
       <SectionHeader
         title="ตั้งค่าระบบร้าน"
         description="จัดการโดเมนของร้าน ทีมงาน และประวัติการเปลี่ยนแปลง"

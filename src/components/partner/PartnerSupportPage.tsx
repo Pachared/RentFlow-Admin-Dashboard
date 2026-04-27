@@ -228,23 +228,24 @@ export function PartnerSupportPage() {
   }
 
   return (
-    <Box className="grid gap-4">
+    <Box className="partner-page">
       <Stack
         direction={{ xs: "column", lg: "row" }}
         spacing={2}
-        className="items-start justify-between lg:items-center"
+        className="partner-page-header partner-page-header-with-action items-start justify-between lg:items-end"
       >
         <Box>
-          <Typography variant="h6" className="text-xl font-extrabold text-slate-900">
+          <Typography className="partner-page-title">
             ซัพพอร์ตลูกค้า
           </Typography>
-          <Typography className="text-sm text-slate-600">
+          <Typography className="partner-page-subtitle">
             รวมข้อความจากลูกค้าและทีมงานไว้ในที่เดียว เพื่อให้ติดตามเคสได้ง่ายขึ้น
           </Typography>
         </Box>
         <Button
           variant="outlined"
           onClick={load}
+          className="max-lg:w-full lg:w-auto"
           sx={{ textTransform: "none" }}
         >
           รีเฟรช

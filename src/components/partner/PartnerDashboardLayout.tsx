@@ -36,7 +36,10 @@ export default function PartnerDashboardLayout({
           pt: { xs: "88px", md: "92px" },
         }}
       >
-        <Container maxWidth="lg" className="py-6 md:py-8">
+        <Container
+          maxWidth={false}
+          className="partner-content-container py-6 md:py-8"
+        >
           {children}
         </Container>
       </Box>

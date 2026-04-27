@@ -86,7 +86,16 @@ export default function PartnerAiPage() {
   }
 
   return (
-    <Stack spacing={3}>
+    <Box className="partner-page">
+      <Box className="partner-page-header">
+        <Typography className="partner-page-title">
+          ผู้ช่วยอัจฉริยะสำหรับเจ้าของร้าน
+        </Typography>
+        <Typography className="partner-page-subtitle">
+          สรุปภาพรวมร้านจากข้อมูลจริงในระบบ เพื่อช่วยจัดลำดับงานการจอง การชำระเงิน รีวิว และรถที่ควรดูแลก่อน
+        </Typography>
+      </Box>
+
       <Box className="partner-card rounded-[34px] p-6 md:p-8">
         <Stack
           direction={{ xs: "column", lg: "row" }}
@@ -241,6 +250,6 @@ export default function PartnerAiPage() {
           </Card>
         </>
       ) : null}
-    </Stack>
+    </Box>
   );
 }

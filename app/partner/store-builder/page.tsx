@@ -111,17 +111,17 @@ export default function Page() {
   }
 
   return (
-    <Box className="grid gap-6">
+    <Box className="partner-page">
       <Stack
         direction={{ xs: "column", md: "row" }}
         spacing={2}
-        className="items-start justify-between"
+        className="partner-page-header partner-page-header-with-action items-start justify-between md:items-end"
       >
         <Box>
-          <Typography className="text-4xl font-black tracking-[-0.04em] text-slate-950 md:text-5xl">
+          <Typography className="partner-page-title">
             จัดหน้าเว็บร้าน
           </Typography>
-          <Typography className="mt-2 text-base text-slate-500 md:text-lg">
+          <Typography className="partner-page-subtitle">
             จัด section หน้าแรก สีหลักของร้าน และสถานะการเผยแพร่ให้พร้อมใช้งานจริง
           </Typography>
         </Box>
@@ -129,7 +129,7 @@ export default function Page() {
           variant="contained"
           onClick={save}
           disabled={saving}
-          className="h-12 rounded-full! bg-slate-950! px-8! text-base! font-bold!"
+          className="h-12 rounded-full! bg-slate-950! px-8! text-base! font-bold! max-md:w-full"
         >
           {saving ? "กำลังบันทึก" : "บันทึกหน้าเว็บ"}
         </Button>

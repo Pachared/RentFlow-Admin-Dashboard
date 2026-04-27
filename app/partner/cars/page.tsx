@@ -349,22 +349,22 @@ export default function PartnerCarsPage() {
   }
 
   return (
-    <Box className="grid gap-4">
+    <Box className="partner-page">
       <Stack
         direction={{ xs: "column", md: "row" }}
         spacing={2}
-        className="items-start justify-between md:items-center"
+        className="partner-page-header partner-page-header-with-action items-start justify-between md:items-end"
       >
         <Box>
-          <Typography variant="h6" className="partner-section-title text-slate-900">
+          <Typography className="partner-page-title">
             รถของร้าน
           </Typography>
-          <Typography className="partner-section-subtitle">
+          <Typography className="partner-page-subtitle">
             เพิ่ม แก้ไข ลบรถ และจัดการรูปภาพที่แสดงบนหน้าร้าน
           </Typography>
         </Box>
 
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} className="w-full md:w-auto">
+        <Stack direction={{ xs: "column", sm: "row" }} className="partner-toolbar w-full md:w-auto">
           <TextField
             size="small"
             label="ค้นหารถ"

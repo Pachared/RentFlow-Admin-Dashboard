@@ -40,15 +40,15 @@ function SectionHeader({
     <Stack
       direction={{ xs: "column", lg: "row" }}
       spacing={2}
-      className="items-start justify-between lg:items-center"
+      className="partner-page-header partner-page-header-with-action items-start justify-between lg:items-end"
     >
       <Box>
-        <Typography variant="h6" className="partner-section-title">
+        <Typography className="partner-page-title">
           {title}
         </Typography>
-        <Typography className="partner-section-subtitle">{description}</Typography>
+        <Typography className="partner-page-subtitle">{description}</Typography>
       </Box>
-      {action}
+      {action ? <Box className="partner-header-action">{action}</Box> : null}
     </Stack>
   );
 }
@@ -316,7 +316,7 @@ export function PartnerLineMessagingPage() {
   }
 
   return (
-    <Box className="grid gap-4">
+    <Box className="partner-page">
       <SectionHeader
         title="เชื่อมบัญชีไลน์ของร้าน"
         description="ร้านแต่ละเจ้าจะใช้บัญชีไลน์ของตัวเอง ลูกค้าเห็นชื่อร้านจริง และข้อความแยกกันอัตโนมัติ"

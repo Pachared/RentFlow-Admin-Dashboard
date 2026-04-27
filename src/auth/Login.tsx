@@ -119,7 +119,6 @@ export default function Login() {
         <Card elevation={0} className="partner-card order-2 rounded-[34px]! lg:order-1">
           <CardContent className="p-6! md:p-8!">
             <Box className="partner-page-header">
-              <Box className="partner-page-kicker">สำหรับเจ้าของร้าน</Box>
               <Typography className="partner-page-title">
                 จัดการร้าน รถ และการจอง
                 <br />
