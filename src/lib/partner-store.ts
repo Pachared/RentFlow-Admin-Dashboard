@@ -7,7 +7,7 @@ export const RENTFLOW_ROOT_DOMAIN =
     process.env.NEXT_PUBLIC_RENTFLOW_ROOT_DOMAIN || "rentflow.com";
 
 const RESERVED_SUBDOMAINS = new Set([
-    "admin",
+    "platform",
     "api",
     "app",
     "assets",

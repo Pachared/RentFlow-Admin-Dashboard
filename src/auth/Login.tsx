@@ -73,8 +73,8 @@ export default function Login() {
       });
 
       const params = new URLSearchParams(window.location.search);
-      const next = params.get("next") || "/admin/dashboard";
-      const safeNext = next.startsWith("/admin") ? next : "/admin/dashboard";
+      const next = params.get("next") || "/partner/dashboard";
+      const safeNext = next.startsWith("/partner") ? next : "/partner/dashboard";
 
       try {
         const tenant = await tenantService.getMyTenant();
@@ -97,7 +97,7 @@ export default function Login() {
           tenantError instanceof RentFlowApiError &&
           tenantError.status === 404
         ) {
-          router.replace("/admin/store-setup");
+          router.replace("/partner/store-setup");
           return;
         }
         throw tenantError;

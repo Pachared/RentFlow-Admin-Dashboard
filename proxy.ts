@@ -3,12 +3,12 @@ import type { NextRequest } from "next/server";
 
 const TOKEN_COOKIE = "rentflow_partner_session";
 const STORE_COOKIE = "rf_store_domain";
-const STORE_SETUP_PATH = "/admin/store-setup";
+const STORE_SETUP_PATH = "/partner/store-setup";
 
 export function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
-    if (!pathname.startsWith("/admin")) return NextResponse.next();
+    if (!pathname.startsWith("/partner")) return NextResponse.next();
 
     const token = req.cookies.get(TOKEN_COOKIE)?.value;
 
@@ -31,5 +31,5 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/admin/:path*"],
+    matcher: ["/partner/:path*"],
 };
