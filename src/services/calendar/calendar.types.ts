@@ -6,9 +6,16 @@ export type PartnerAvailabilityBlock = {
   branchId?: string;
   startDate: string;
   endDate: string;
+  blockType?: string;
+  bufferHours?: number;
   reason: string;
   note?: string;
 };
+
+export type CreatePartnerAvailabilityBlockInput = Omit<
+  PartnerAvailabilityBlock,
+  "id"
+>;
 
 export type PartnerCalendar = {
   bookings: PartnerBooking[];

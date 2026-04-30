@@ -1,9 +1,20 @@
 export type StorefrontBlock = {
   id?: string;
-  type?: "text" | "feature" | "cta" | "announcement";
+  type?:
+    | "hero"
+    | "text"
+    | "feature"
+    | "promo"
+    | "steps"
+    | "testimonial"
+    | "faq"
+    | "cta"
+    | "announcement";
   title?: string;
   subtitle?: string;
   description?: string;
+  imageUrl?: string;
+  imageAlt?: string;
   buttonLabel?: string;
   href?: string;
   tone?: "default" | "highlight" | "dark" | "success";

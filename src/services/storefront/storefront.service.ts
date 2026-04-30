@@ -21,4 +21,21 @@ export const storefrontService = {
       }),
     });
   },
+
+  uploadBlockImage(file: File) {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    return requestPartner<{
+      id: string;
+      tenantId: string;
+      imageUrl: string;
+      fileName?: string;
+      mimeType?: string;
+      size?: number;
+    }>("/partner/storefront/block-images", {
+      method: "POST",
+      body: formData,
+    });
+  },
 };

@@ -535,22 +535,63 @@ export function PartnerBookingsPage() {
   );
 }
 
-export function PartnerPaymentsPage({ verificationOnly = false }: { verificationOnly?: boolean }) {
+type PartnerPaymentFilter =
+  | "all"
+  | "needs_review"
+  | "paid"
+  | "pending_payout"
+  | "settled"
+  | "refunded"
+  | "failed";
+
+function paymentNeedsReview(payment: PartnerPayment) {
+  return payment.status !== "paid" || !payment.verifiedAt;
+}
+
+function matchesPaymentFilter(
+  payment: PartnerPayment,
+  filter: PartnerPaymentFilter
+) {
+  if (filter === "all") return true;
+  if (filter === "needs_review") return paymentNeedsReview(payment);
+  if (filter === "paid") return payment.status === "paid" && Boolean(payment.verifiedAt);
+  if (filter === "pending_payout") {
+    return (
+      payment.status === "paid" &&
+      (payment.payoutStatus || "pending_payout") === "pending_payout"
+    );
+  }
+  if (filter === "settled") {
+    return payment.payoutStatus === "settled" || Boolean(payment.settledAt);
+  }
+  if (filter === "refunded") return payment.refundStatus === "refunded";
+  if (filter === "failed") return payment.status === "failed";
+  return true;
+}
+
+export function PartnerPaymentsPage({
+  verificationOnly = false,
+}: {
+  verificationOnly?: boolean;
+}) {
   const [items, setItems] = React.useState<PartnerPayment[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [filter, setFilter] = React.useState<PartnerPaymentFilter>(
+    verificationOnly ? "needs_review" : "all"
+  );
   const { snack, setSnack, close } = useSnack();
 
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
       const response = await paymentsService.getPayments();
-      setItems(verificationOnly ? response.items.filter((item) => item.status !== "paid" || !item.verifiedAt) : response.items);
+      setItems(response.items);
     } catch (error: unknown) {
       setSnack({ open: true, message: error instanceof Error ? error.message : "โหลดการชำระเงินไม่สำเร็จ", severity: "error" });
     } finally {
       setLoading(false);
     }
-  }, [setSnack, verificationOnly]);
+  }, [setSnack]);
 
   React.useEffect(() => {
     load();
@@ -571,13 +612,41 @@ export function PartnerPaymentsPage({ verificationOnly = false }: { verification
     }
   }
 
+  const filteredItems = React.useMemo(
+    () => items.filter((payment) => matchesPaymentFilter(payment, filter)),
+    [filter, items]
+  );
+
   return (
     <Box className="partner-page">
-      <SectionHeader title={verificationOnly ? "ตรวจสอบการชำระเงิน" : "การชำระเงิน"} description="จัดการตรวจสลิป คืนเงิน และปิดยอดเข้าร้าน" />
+      <SectionHeader
+        title="การชำระเงิน"
+        description="ตรวจสอบรายการชำระเงิน ยืนยันสลิป คืนเงิน และปิดยอดเข้าร้านได้ในหน้าเดียว"
+        action={
+          <TextField
+            select
+            size="small"
+            label="สถานะ"
+            value={filter}
+            onChange={(event) =>
+              setFilter(event.target.value as PartnerPaymentFilter)
+            }
+            className="w-full md:w-56"
+          >
+            <MenuItem value="all">ทั้งหมด</MenuItem>
+            <MenuItem value="needs_review">รอตรวจสอบ</MenuItem>
+            <MenuItem value="paid">ชำระแล้ว</MenuItem>
+            <MenuItem value="pending_payout">รอปิดยอด</MenuItem>
+            <MenuItem value="settled">ปิดยอดแล้ว</MenuItem>
+            <MenuItem value="refunded">คืนเงินแล้ว</MenuItem>
+            <MenuItem value="failed">ไม่สำเร็จ</MenuItem>
+          </TextField>
+        }
+      />
       {loading ? <LoadingCard /> : (
         <Card elevation={0} className="partner-card rounded-[30px]!">
           <CardContent className="p-0!">
-            {items.length === 0 ? <EmptyState label="ยังไม่มีรายการชำระเงิน" /> : items.map((payment, index) => (
+            {filteredItems.length === 0 ? <EmptyState label="ยังไม่มีรายการชำระเงินในสถานะนี้" /> : filteredItems.map((payment, index) => (
               <Box key={payment.id}>
                 <Stack direction={{ xs: "column", md: "row" }} spacing={2} className="items-start justify-between p-4">
                   <Box>
@@ -602,12 +671,31 @@ export function PartnerPaymentsPage({ verificationOnly = false }: { verification
                     </Stack>
                   </Box>
                   <Stack direction={{ xs: "column", sm: "row" }} spacing={1} className="w-full md:w-auto">
-                    <Button variant="outlined" onClick={() => runAction(() => paymentsService.verifyPayment(payment.id), "ยืนยันชำระเงินแล้ว")}>ยืนยัน</Button>
-                    <Button variant="outlined" onClick={() => runAction(() => paymentsService.settlePayment(payment.id), "ปิดยอดเข้าร้านแล้ว")}>ปิดยอด</Button>
-                    <Button color="error" variant="outlined" onClick={() => runAction(() => paymentsService.refundPayment(payment.id, payment.amount), "คืนเงินแล้ว")}>คืนเงิน</Button>
+                    <Button
+                      variant="outlined"
+                      disabled={!paymentNeedsReview(payment)}
+                      onClick={() => runAction(() => paymentsService.verifyPayment(payment.id), "ยืนยันชำระเงินแล้ว")}
+                    >
+                      ยืนยัน
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      disabled={payment.status !== "paid" || payment.payoutStatus === "settled"}
+                      onClick={() => runAction(() => paymentsService.settlePayment(payment.id), "ปิดยอดเข้าร้านแล้ว")}
+                    >
+                      ปิดยอด
+                    </Button>
+                    <Button
+                      color="error"
+                      variant="outlined"
+                      disabled={payment.refundStatus === "refunded"}
+                      onClick={() => runAction(() => paymentsService.refundPayment(payment.id, payment.amount), "คืนเงินแล้ว")}
+                    >
+                      คืนเงิน
+                    </Button>
                   </Stack>
                 </Stack>
-                {index < items.length - 1 ? <Divider /> : null}
+                {index < filteredItems.length - 1 ? <Divider /> : null}
               </Box>
             ))}
           </CardContent>
@@ -720,8 +808,23 @@ export function PartnerCalendarPage() {
     onRefresh: load,
   });
   async function createBlock() {
+    if (!startDate || !endDate) {
+      setSnack({ open: true, message: "กรุณาเลือกวันเริ่มต้นและวันสิ้นสุด", severity: "info" });
+      return;
+    }
+    if (new Date(endDate).getTime() <= new Date(startDate).getTime()) {
+      setSnack({ open: true, message: "วันสิ้นสุดต้องอยู่หลังวันเริ่มต้น", severity: "info" });
+      return;
+    }
     try {
-      await calendarService.createAvailabilityBlock({ startDate, endDate, reason });
+      await calendarService.createAvailabilityBlock({
+        startDate,
+        endDate,
+        reason,
+        blockType: "manual",
+      });
+      setStartDate("");
+      setEndDate("");
       setSnack({ open: true, message: "เพิ่มวันปิดรับจองแล้ว", severity: "success" });
       load();
     } catch (error: unknown) {

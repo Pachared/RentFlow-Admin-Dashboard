@@ -1,5 +1,5 @@
-import { PartnerPaymentsPage } from "@/src/components/partner/PartnerDataPages";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <PartnerPaymentsPage verificationOnly />;
+  redirect("/partner/payments");
 }
